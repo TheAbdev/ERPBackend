@@ -1,0 +1,50 @@
+# Dependencies
+/vendor
+/node_modules
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+storage/logs/*.log
+
+# Cache
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Testing
+.phpunit.result.cache
+coverage
+tests/_output
+
+# Build
+/public/hot
+/public/storage
+/public/build
+
+# Misc
+.git
+.gitignore
+README.md
+*.md
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+
+

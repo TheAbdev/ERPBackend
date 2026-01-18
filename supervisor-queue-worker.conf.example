@@ -1,0 +1,44 @@
+# Supervisor configuration for ERP Queue Workers
+# Copy this file to /etc/supervisor/conf.d/erp-queue-worker.conf
+# Then run: sudo supervisorctl reread && sudo supervisorctl update
+
+[program:erp-queue-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /path/to/your/project/artisan queue:work redis --sleep=3 --tries=3 --max-time=3600 --timeout=300
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=4
+redirect_stderr=true
+stdout_logfile=/path/to/your/project/storage/logs/queue-worker.log
+stopwaitsecs=3600
+
+# Optional: Separate queues
+[program:erp-queue-webhooks]
+process_name=%(program_name)s_%(process_num)02d
+command=php /path/to/your/project/artisan queue:work redis --queue=webhooks --sleep=3 --tries=3 --max-time=3600 --timeout=300
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/path/to/your/project/storage/logs/queue-webhooks.log
+stopwaitsecs=3600
+
+[program:erp-queue-reports]
+process_name=%(program_name)s_%(process_num)02d
+command=php /path/to/your/project/artisan queue:work redis --queue=reports --sleep=3 --tries=3 --max-time=3600 --timeout=300
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/path/to/your/project/storage/logs/queue-reports.log
+stopwaitsecs=3600
+
