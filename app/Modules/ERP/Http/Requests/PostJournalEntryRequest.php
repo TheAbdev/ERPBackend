@@ -3,15 +3,19 @@
 namespace App\Modules\ERP\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Modules\ERP\Models\JournalEntry;
 
 class PostJournalEntryRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     * Authorization is handled in the controller method.
      */
     public function authorize(): bool
     {
-        return $this->user()->can('erp.accounting.journals.update');
+        // Authorization is handled in JournalEntryController::post() method
+        // using $this->authorize('update', $journalEntry)
+        return true;
     }
 
     /**

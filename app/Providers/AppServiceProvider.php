@@ -218,6 +218,21 @@ class AppServiceProvider extends ServiceProvider
         );
 
         \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\ERP\Models\Project::class,
+            \App\Modules\ERP\Policies\ProjectPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\ERP\Models\ProjectTask::class,
+            \App\Modules\ERP\Policies\ProjectTaskPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\ERP\Models\Timesheet::class,
+            \App\Modules\ERP\Policies\TimesheetPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
             \App\Modules\CRM\Models\LeadScore::class,
             \App\Modules\CRM\Policies\LeadScorePolicy::class
         );

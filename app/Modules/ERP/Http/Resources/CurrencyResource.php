@@ -30,3 +30,4 @@ class CurrencyResource extends JsonResource
 }
 
 
+

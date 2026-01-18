@@ -158,19 +158,35 @@ class User extends Authenticatable
     public function isTenantOwner(): bool
     {
         // Check if user has super_admin role
-        if ($this->hasRole('super_admin')) {
-            return true;
+        try {
+            if ($this->hasRole('super_admin')) {
+                return true;
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Error checking super_admin role in isTenantOwner', [
+                'user_id' => $this->id,
+                'tenant_id' => $this->tenant_id,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         // Check if user is the owner of their tenant
         if ($this->tenant_id) {
-            // Load tenant if not already loaded
-            if (!$this->relationLoaded('tenant')) {
-                $this->load('tenant');
-            }
+            try {
+                // Load tenant if not already loaded
+                if (!$this->relationLoaded('tenant')) {
+                    $this->load('tenant');
+                }
 
-            if ($this->tenant && $this->tenant->owner_user_id === $this->id) {
-                return true;
+                if ($this->tenant && $this->tenant->owner_user_id === $this->id) {
+                    return true;
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('Error checking tenant owner_user_id in isTenantOwner', [
+                    'user_id' => $this->id,
+                    'tenant_id' => $this->tenant_id,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 

@@ -2,13 +2,11 @@
 
 namespace App\Modules\ERP\Policies;
 
-class CurrencyPolicy extends ErpBasePolicy
+class ProjectPolicy extends ErpBasePolicy
 {
     protected function getResourceName(): string
     {
-        return 'currencies';
+        return 'projects';
     }
 }
-
-
 

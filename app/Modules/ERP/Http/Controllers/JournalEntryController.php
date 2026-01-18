@@ -76,7 +76,16 @@ class JournalEntryController extends Controller
 
         // Create journal entry lines
         foreach ($request->input('lines', []) as $lineData) {
-            $entry->lines()->create($lineData);
+            // Normalize line data: convert debit_amount/credit_amount to debit/credit
+            $normalizedLine = [
+                'account_id' => $lineData['account_id'],
+                'currency_id' => $lineData['currency_id'] ?? null,
+                'debit' => $lineData['debit'] ?? $lineData['debit_amount'] ?? 0,
+                'credit' => $lineData['credit'] ?? $lineData['credit_amount'] ?? 0,
+                'description' => $lineData['description'] ?? null,
+                'line_number' => $lineData['line_number'] ?? null,
+            ];
+            $entry->lines()->create($normalizedLine);
         }
 
         return response()->json([
@@ -123,7 +132,16 @@ class JournalEntryController extends Controller
         if ($request->has('lines')) {
             $journalEntry->lines()->delete();
             foreach ($request->input('lines', []) as $lineData) {
-                $journalEntry->lines()->create($lineData);
+                // Normalize line data: convert debit_amount/credit_amount to debit/credit
+                $normalizedLine = [
+                    'account_id' => $lineData['account_id'],
+                    'currency_id' => $lineData['currency_id'] ?? null,
+                    'debit' => $lineData['debit'] ?? $lineData['debit_amount'] ?? 0,
+                    'credit' => $lineData['credit'] ?? $lineData['credit_amount'] ?? 0,
+                    'description' => $lineData['description'] ?? null,
+                    'line_number' => $lineData['line_number'] ?? null,
+                ];
+                $journalEntry->lines()->create($normalizedLine);
             }
         }
 

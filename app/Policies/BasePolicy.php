@@ -16,8 +16,19 @@ abstract class BasePolicy
     public function viewAny(User $user): bool
     {
         // Super Admin (Tenant Owner) has full access
-        if ($user->hasRole('super_admin')) {
-            return true;
+        if ($user->tenant_id) {
+            try {
+                if ($user->isTenantOwner()) {
+                    return true;
+                }
+            } catch (\Exception $e) {
+                // Log error but continue
+                \Illuminate\Support\Facades\Log::warning('Error checking tenant owner in viewAny', [
+                    'user_id' => $user->id,
+                    'tenant_id' => $user->tenant_id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
         
         return $this->checkPermission($user, $this->getPermissionName('viewAny'));
@@ -32,6 +43,22 @@ abstract class BasePolicy
      */
     public function view(User $user, $model): bool
     {
+        // Super Admin (Tenant Owner) has full access within their tenant
+        if ($user->tenant_id) {
+            try {
+                if ($user->isTenantOwner()) {
+                    return $this->checkTenantAccess($user, $model);
+                }
+            } catch (\Exception $e) {
+                // Log error but continue
+                \Illuminate\Support\Facades\Log::warning('Error checking tenant owner in view', [
+                    'user_id' => $user->id,
+                    'tenant_id' => $user->tenant_id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+        
         return $this->checkTenantAccess($user, $model)
             && $this->checkPermission($user, $this->getPermissionName('view'));
     }
@@ -46,31 +73,20 @@ abstract class BasePolicy
     {
         // Super Admin (Tenant Owner) has full access
         if ($user->tenant_id) {
-            // Check if user has super_admin role
+            // Check if user is tenant owner
             try {
-                if ($user->hasRole('super_admin')) {
+                $isOwner = $user->isTenantOwner();
+                if ($isOwner) {
+                    \Illuminate\Support\Facades\Log::info('Tenant owner granted create access', [
+                        'user_id' => $user->id,
+                        'tenant_id' => $user->tenant_id,
+                        'resource' => $this->getResourceName(),
+                    ]);
                     return true;
                 }
             } catch (\Exception $e) {
                 // Log error but continue
-                \Illuminate\Support\Facades\Log::warning('Error checking super_admin role', [
-                    'user_id' => $user->id,
-                    'tenant_id' => $user->tenant_id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-            
-            // Fallback: Check if user is the tenant owner directly
-            try {
-                if (!$user->relationLoaded('tenant')) {
-                    $user->load('tenant');
-                }
-                if ($user->tenant && $user->tenant->owner_user_id === $user->id) {
-                    return true;
-                }
-            } catch (\Exception $e) {
-                // Log error but continue
-                \Illuminate\Support\Facades\Log::warning('Error checking tenant owner', [
+                \Illuminate\Support\Facades\Log::warning('Error checking tenant owner in create', [
                     'user_id' => $user->id,
                     'tenant_id' => $user->tenant_id,
                     'error' => $e->getMessage(),
@@ -80,7 +96,15 @@ abstract class BasePolicy
         
         // Check permission
         $permission = $this->getPermissionName('create');
-        return $this->checkPermission($user, $permission);
+        $hasPermission = $this->checkPermission($user, $permission);
+        
+        \Illuminate\Support\Facades\Log::info('Permission check result', [
+            'user_id' => $user->id,
+            'permission' => $permission,
+            'has_permission' => $hasPermission,
+        ]);
+        
+        return $hasPermission;
     }
 
     /**
@@ -94,26 +118,9 @@ abstract class BasePolicy
     {
         // Super Admin (Tenant Owner) has full access within their tenant
         if ($user->tenant_id) {
-            // Check if user has super_admin role
+            // Check if user is tenant owner
             try {
-                if ($user->hasRole('super_admin')) {
-                    return $this->checkTenantAccess($user, $model);
-                }
-            } catch (\Exception $e) {
-                // Log error but continue
-                \Illuminate\Support\Facades\Log::warning('Error checking super_admin role in update', [
-                    'user_id' => $user->id,
-                    'tenant_id' => $user->tenant_id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-            
-            // Fallback: Check if user is the tenant owner directly
-            try {
-                if (!$user->relationLoaded('tenant')) {
-                    $user->load('tenant');
-                }
-                if ($user->tenant && $user->tenant->owner_user_id === $user->id) {
+                if ($user->isTenantOwner()) {
                     return $this->checkTenantAccess($user, $model);
                 }
             } catch (\Exception $e) {
@@ -140,8 +147,19 @@ abstract class BasePolicy
     public function delete(User $user, $model): bool
     {
         // Super Admin (Tenant Owner) has full access within their tenant
-        if ($user->hasRole('super_admin')) {
-            return $this->checkTenantAccess($user, $model);
+        if ($user->tenant_id) {
+            try {
+                if ($user->isTenantOwner()) {
+                    return $this->checkTenantAccess($user, $model);
+                }
+            } catch (\Exception $e) {
+                // Log error but continue
+                \Illuminate\Support\Facades\Log::warning('Error checking tenant owner in delete', [
+                    'user_id' => $user->id,
+                    'tenant_id' => $user->tenant_id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
         
         return $this->checkTenantAccess($user, $model)
