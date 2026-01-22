@@ -2,6 +2,9 @@
 
 namespace App\Modules\CRM\Http\Controllers;
 
+use App\Events\EntityCreated;
+use App\Events\EntityDeleted;
+use App\Events\EntityUpdated;
 use App\Http\Controllers\Controller;
 use App\Modules\CRM\Http\Requests\MoveDealStageRequest;
 use App\Modules\CRM\Http\Requests\StoreDealRequest;
@@ -47,6 +50,9 @@ class DealController extends Controller
 
         $deal->load(['pipeline', 'stage', 'lead', 'contact', 'account', 'creator', 'assignee']);
 
+        // Dispatch entity created event
+        event(new EntityCreated($deal, $request->user()->id));
+
         return response()->json([
             'data' => new DealResource($deal),
             'message' => 'Deal created successfully.',
@@ -90,6 +96,9 @@ class DealController extends Controller
 
         $deal->load(['pipeline', 'stage', 'lead', 'contact', 'account', 'creator', 'assignee']);
 
+        // Dispatch entity updated event
+        event(new EntityUpdated($deal, $request->user()->id));
+
         return response()->json([
             'data' => new DealResource($deal),
             'message' => 'Deal updated successfully.',
@@ -105,6 +114,9 @@ class DealController extends Controller
     public function destroy(Deal $deal): JsonResponse
     {
         $this->authorize('delete', $deal);
+
+        // Dispatch entity deleted event before deletion
+        event(new EntityDeleted($deal, request()->user()->id));
 
         $deal->delete();
 

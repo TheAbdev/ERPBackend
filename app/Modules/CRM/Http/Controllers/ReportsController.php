@@ -58,14 +58,15 @@ class ReportsController extends Controller
     public function deals(ReportFilterRequest $request): JsonResponse
     {
         $filters = $request->validated();
+        $dealValue = $this->dealsReportService->getTotalDealValue($filters);
 
         return response()->json([
             'data' => [
-                'total_deal_value' => $this->dealsReportService->getTotalDealValue($filters),
-                'won_vs_lost' => $this->dealsReportService->getWonVsLost($filters),
-                'pipeline_funnel' => $this->dealsReportService->getPipelineFunnel($filters),
-                'average_deal_duration' => $this->dealsReportService->getAverageDealDuration($filters),
-                'revenue_forecast' => $this->dealsReportService->getRevenueForecast($filters),
+                'total_deals' => $this->dealsReportService->getTotalDeals($filters),
+                'total_value' => $dealValue['total_value'] ?? 0,
+                'by_stage' => $this->dealsReportService->getByStage($filters),
+                'by_status' => $this->dealsReportService->getByStatus($filters),
+                'win_rate' => $this->dealsReportService->getWinRate($filters),
             ],
         ]);
     }
@@ -82,10 +83,10 @@ class ReportsController extends Controller
 
         return response()->json([
             'data' => [
-                'per_user' => $this->activitiesReportService->getActivitiesPerUser($filters),
-                'completed_vs_pending' => $this->activitiesReportService->getCompletedVsPending($filters),
-                'overdue' => $this->activitiesReportService->getOverdueActivities($filters),
-                'type_distribution' => $this->activitiesReportService->getActivityTypeDistribution($filters),
+                'total_activities' => $this->activitiesReportService->getTotalActivities($filters),
+                'by_type' => $this->activitiesReportService->getByType($filters),
+                'by_status' => $this->activitiesReportService->getByStatus($filters),
+                'completion_rate' => $this->activitiesReportService->getCompletionRate($filters),
             ],
         ]);
     }
@@ -102,10 +103,10 @@ class ReportsController extends Controller
 
         return response()->json([
             'data' => [
-                'revenue_per_user' => $this->salesPerformanceService->getRevenuePerUser($filters),
-                'deals_closed_per_user' => $this->salesPerformanceService->getDealsClosedPerUser($filters),
-                'average_deal_size_per_user' => $this->salesPerformanceService->getAverageDealSizePerUser($filters),
-                'win_rate_per_user' => $this->salesPerformanceService->getWinRatePerUser($filters),
+                'total_revenue' => $this->salesPerformanceService->getTotalRevenue($filters),
+                'by_period' => $this->salesPerformanceService->getByPeriod($filters),
+                'by_user' => $this->salesPerformanceService->getByUser($filters),
+                'average_deal_size' => $this->salesPerformanceService->getAverageDealSize($filters),
             ],
         ]);
     }

@@ -25,6 +25,7 @@ class ProductResource extends JsonResource
                 'name' => $this->category->name,
             ] : null,
             'unit_of_measure' => $this->unit_of_measure,
+            'quantity' => $this->quantity ?? 0,
             'is_tracked' => $this->is_tracked,
             'is_serialized' => $this->is_serialized,
             'is_batch_tracked' => $this->is_batch_tracked,

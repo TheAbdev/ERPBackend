@@ -56,3 +56,12 @@ class EmailCampaignE2ETest extends TestCase
 
 
 
+
+
+
+
+
+
+
+
+

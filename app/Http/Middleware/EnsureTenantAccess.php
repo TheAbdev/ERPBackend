@@ -24,6 +24,13 @@ class EnsureTenantAccess
             return $next($request);
         }
 
+        // Check if user is Site Owner - Site Owner can access without tenant
+       /* $isSiteOwner = $user->hasRole('site_owner') || $user->hasPermission('platform.manage');
+        if ($isSiteOwner) {
+            // Site Owner can access without tenant resolution
+            return $next($request);
+        }*/
+
         // If no tenant is resolved, deny access
         if (! $tenantContext->hasTenant()) {
             return response()->json([

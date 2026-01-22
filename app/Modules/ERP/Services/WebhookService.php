@@ -39,6 +39,31 @@ class WebhookService extends BaseService
     }
 
     /**
+     * Trigger an event with explicit tenant ID and deliver to subscribed webhooks.
+     *
+     * @param  string  $module
+     * @param  string  $eventType
+     * @param  \Illuminate\Database\Eloquent\Model  $entity
+     * @param  int  $tenantId
+     * @return void
+     */
+    public function triggerEventWithTenant(string $module, string $eventType, Model $entity, int $tenantId): void
+    {
+        // Get active webhooks for this module and event type
+        $webhooks = Webhook::where('tenant_id', $tenantId)
+            ->where('module', $module)
+            ->where('is_active', true)
+            ->get()
+            ->filter(function ($webhook) use ($eventType) {
+                return $webhook->subscribesTo($eventType);
+            });
+
+        foreach ($webhooks as $webhook) {
+            $this->queueDelivery($webhook, $eventType, $entity);
+        }
+    }
+
+    /**
      * Queue webhook delivery.
      *
      * @param  \App\Modules\ERP\Models\Webhook  $webhook

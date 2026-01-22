@@ -2,6 +2,9 @@
 
 namespace App\Modules\ERP\Http\Controllers;
 
+use App\Events\EntityCreated;
+use App\Events\EntityDeleted;
+use App\Events\EntityUpdated;
 use App\Http\Controllers\Controller;
 use App\Modules\ERP\Http\Requests\ConfirmSalesOrderRequest;
 use App\Modules\ERP\Http\Requests\DeliverSalesOrderRequest;
@@ -69,6 +72,9 @@ class SalesOrderController extends Controller
         // Calculate totals
         $this->salesOrderService->calculateTotals($order);
 
+        // Dispatch entity created event
+        event(new EntityCreated($order, $request->user()->id));
+
         return response()->json([
             'message' => 'Sales order created successfully.',
             'data' => new SalesOrderResource($order->load(['warehouse', 'currency', 'items.product'])),
@@ -127,6 +133,9 @@ class SalesOrderController extends Controller
         // Recalculate totals
         $this->salesOrderService->calculateTotals($salesOrder->fresh());
 
+        // Dispatch entity updated event
+        event(new EntityUpdated($salesOrder->fresh(), $request->user()->id));
+
         return response()->json([
             'message' => 'Sales order updated successfully.',
             'data' => new SalesOrderResource($salesOrder->load(['warehouse', 'currency', 'items.product'])),
@@ -148,6 +157,9 @@ class SalesOrderController extends Controller
                 'message' => 'Cannot delete a confirmed order. Cancel it first.',
             ], 422);
         }
+
+        // Dispatch entity deleted event before deletion
+        event(new EntityDeleted($salesOrder, request()->user()->id));
 
         $salesOrder->delete();
 

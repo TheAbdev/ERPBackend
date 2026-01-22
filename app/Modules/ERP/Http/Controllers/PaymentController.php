@@ -2,6 +2,9 @@
 
 namespace App\Modules\ERP\Http\Controllers;
 
+use App\Events\EntityCreated;
+use App\Events\EntityDeleted;
+use App\Events\EntityUpdated;
 use App\Http\Controllers\Controller;
 use App\Modules\ERP\Http\Requests\ApplyPaymentRequest;
 use App\Modules\ERP\Http\Requests\StorePaymentRequest;
@@ -73,6 +76,9 @@ class PaymentController extends Controller
 
         $payment = Payment::create($validated);
 
+        // Dispatch entity created event
+        event(new EntityCreated($payment, $request->user()->id));
+
         return response()->json([
             'message' => 'Payment created successfully.',
             'data' => new PaymentResource($payment->load(['fiscalYear', 'fiscalPeriod', 'currency', 'creator'])),
@@ -124,6 +130,9 @@ class PaymentController extends Controller
 
         $payment->update($validated);
 
+        // Dispatch entity updated event
+        event(new EntityUpdated($payment->fresh(), $request->user()->id));
+
         return response()->json([
             'message' => 'Payment updated successfully.',
             'data' => new PaymentResource($payment->fresh()),
@@ -145,6 +154,9 @@ class PaymentController extends Controller
                 'message' => 'Cannot delete payment with allocations. Reverse allocations first.',
             ], 422);
         }
+
+        // Dispatch entity deleted event before deletion
+        event(new EntityDeleted($payment, request()->user()->id));
 
         $payment->delete();
 

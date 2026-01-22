@@ -2,6 +2,9 @@
 
 namespace App\Modules\ERP\Listeners;
 
+use App\Events\EntityCreated;
+use App\Events\EntityDeleted;
+use App\Events\EntityUpdated;
 use App\Modules\ERP\Services\ActivityFeedService;
 use App\Modules\ERP\Services\NotificationService;
 use App\Modules\ERP\Services\WebhookService;
@@ -47,7 +50,7 @@ class HandleEntityEvent
             $this->activityFeedService->logAction($entity, 'created', $event->userId ?? null);
 
             // Trigger webhook
-            $this->webhookService->triggerEvent($module, "{$module}.entity.created", $entity);
+            $this->triggerWebhook($entity, $module, "{$module}.entity.created");
 
             // Send notification if needed
             if (isset($event->notifyUsers) && is_array($event->notifyUsers)) {
@@ -89,7 +92,7 @@ class HandleEntityEvent
             $this->activityFeedService->logAction($entity, 'updated', $event->userId ?? null);
 
             // Trigger webhook
-            $this->webhookService->triggerEvent($module, "{$module}.entity.updated", $entity);
+            $this->triggerWebhook($entity, $module, "{$module}.entity.updated");
         } catch (\Exception $e) {
             Log::error('Failed to handle entity updated event', [
                 'entity' => get_class($entity),
@@ -180,6 +183,62 @@ class HandleEntityEvent
             Log::error('Failed to handle entity rejected event', [
                 'entity' => get_class($entity),
                 'entity_id' => $entity->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Handle entity deleted event.
+     *
+     * @param  object  $event
+     * @return void
+     */
+    public function handleDeleted($event): void
+    {
+        if (!isset($event->entity) || !($event->entity instanceof Model)) {
+            return;
+        }
+
+        $entity = $event->entity;
+        $module = $this->getModule($entity);
+
+        try {
+            // Log to activity feed
+            $this->activityFeedService->logAction($entity, 'deleted', $event->userId ?? null);
+
+            // Trigger webhook
+            $this->triggerWebhook($entity, $module, "{$module}.entity.deleted");
+        } catch (\Exception $e) {
+            Log::error('Failed to handle entity deleted event', [
+                'entity' => get_class($entity),
+                'entity_id' => $entity->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Trigger webhook with tenant context.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $entity
+     * @param  string  $module
+     * @param  string  $eventType
+     * @return void
+     */
+    protected function triggerWebhook(Model $entity, string $module, string $eventType): void
+    {
+        try {
+            // Get tenant_id from entity if available
+            $tenantId = $entity->tenant_id ?? null;
+            
+            if ($tenantId) {
+                $this->webhookService->triggerEventWithTenant($module, $eventType, $entity, $tenantId);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to trigger webhook', [
+                'entity' => get_class($entity),
+                'entity_id' => $entity->id ?? null,
                 'error' => $e->getMessage(),
             ]);
         }

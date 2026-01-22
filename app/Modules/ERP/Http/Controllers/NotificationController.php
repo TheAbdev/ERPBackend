@@ -25,12 +25,13 @@ class NotificationController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Notification::class);
 
-        $query = Notification::where('tenant_id', $request->user()->tenant_id)
-            ->where('user_id', $request->user()->id)
+        $user = $request->user();
+        $query = Notification::where('tenant_id', $user->tenant_id)
+            ->where('user_id', $user->id)
             ->with('entity');
 
         if ($request->has('unread_only')) {
@@ -44,7 +45,22 @@ class NotificationController extends Controller
         $notifications = $query->orderBy('created_at', 'desc')
             ->paginate($request->input('per_page', 50));
 
-        return NotificationResource::collection($notifications);
+        // Get unread count
+        $unreadCount = Notification::where('tenant_id', $user->tenant_id)
+            ->where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->count();
+
+        return response()->json([
+            'data' => NotificationResource::collection($notifications)->resolve(),
+            'meta' => [
+                'current_page' => $notifications->currentPage(),
+                'per_page' => $notifications->perPage(),
+                'total' => $notifications->total(),
+                'last_page' => $notifications->lastPage(),
+                'unread_count' => $unreadCount,
+            ],
+        ]);
     }
 
     /**

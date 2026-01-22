@@ -6,6 +6,7 @@ use App\Core\Models\AuditLog;
 use App\Core\Services\ActivityTimelineService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class AuditLogController extends Controller
 {
@@ -26,8 +27,25 @@ class AuditLogController extends Controller
     {
         $this->authorize('viewAny', AuditLog::class);
 
-        $query = AuditLog::where('tenant_id', $request->user()->tenant_id)
-            ->with(['user:id,name,email']);
+        $user = $request->user();
+        $query = AuditLog::with(['user:id,name,email']);
+
+        // Check if user is Site Owner (site_owner role) - check without tenant_id restriction
+        $isSiteOwner = $user->roles()
+            ->where('slug', 'site_owner')
+            ->exists();
+
+        // Site Owner (site_owner role): can see all audit logs (no filtering)
+        // Super Admin (super_admin role): can only see their tenant's audit logs
+        if (!$isSiteOwner) {
+            // If not Site Owner, filter by tenant_id
+            if ($user->tenant_id) {
+                $query->where('tenant_id', $user->tenant_id);
+            } else {
+                // If user has no tenant_id, return empty (should not happen)
+                $query->whereRaw('1 = 0');
+            }
+        }
 
         // Filters
         if ($request->has('user_id')) {
@@ -140,6 +158,66 @@ class AuditLogController extends Controller
         );
 
         return response()->json(['data' => $activity]);
+    }
+
+    /**
+     * Delete audit logs for the user's tenant.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Check authorization - for bulk delete, create a temporary instance
+        // The policy delete method accepts null for bulk operations
+        $tempAuditLog = new AuditLog();
+        $this->authorize('delete', $tempAuditLog);
+        $query = AuditLog::query();
+
+        // Check if user is Site Owner (site_owner role)
+        $isSiteOwner = $user->roles()
+            ->where('slug', 'site_owner')
+            ->exists();
+
+        // Site Owner can delete all audit logs
+        // Super Admin can only delete their tenant's audit logs
+        if (!$isSiteOwner) {
+            // If not Site Owner, only delete logs for user's tenant
+            if ($user->tenant_id) {
+                $query->where('tenant_id', $user->tenant_id);
+            } else {
+                // If user has no tenant_id, return error
+                return response()->json([
+                    'message' => 'Cannot delete audit logs. User has no tenant.',
+                ], 422);
+            }
+        }
+
+        // Apply optional filters
+        if ($request->has('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->has('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+
+        if ($request->has('action')) {
+            $query->where('action', $request->input('action'));
+        }
+
+        if ($request->has('model_type')) {
+            $query->where('model_type', $request->input('model_type'));
+        }
+
+        $deletedCount = $query->delete();
+
+        return response()->json([
+            'message' => "Successfully deleted {$deletedCount} audit log(s).",
+            'deleted_count' => $deletedCount,
+        ]);
     }
 }
 

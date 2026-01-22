@@ -2,6 +2,9 @@
 
 namespace App\Modules\ERP\Http\Controllers;
 
+use App\Events\EntityCreated;
+use App\Events\EntityDeleted;
+use App\Events\EntityUpdated;
 use App\Http\Controllers\Controller;
 use App\Modules\ERP\Http\Requests\ConfirmPurchaseOrderRequest;
 use App\Modules\ERP\Http\Requests\ReceivePurchaseOrderRequest;
@@ -69,6 +72,9 @@ class PurchaseOrderController extends Controller
         // Calculate totals
         $this->purchaseOrderService->calculateTotals($order);
 
+        // Dispatch entity created event
+        event(new EntityCreated($order, $request->user()->id));
+
         return response()->json([
             'message' => 'Purchase order created successfully.',
             'data' => new PurchaseOrderResource($order->load(['warehouse', 'currency', 'items.product'])),
@@ -120,6 +126,9 @@ class PurchaseOrderController extends Controller
         // Recalculate totals
         $this->purchaseOrderService->calculateTotals($purchaseOrder->fresh());
 
+        // Dispatch entity updated event
+        event(new EntityUpdated($purchaseOrder->fresh(), $request->user()->id));
+
         return response()->json([
             'message' => 'Purchase order updated successfully.',
             'data' => new PurchaseOrderResource($purchaseOrder->load(['warehouse', 'currency', 'items.product'])),
@@ -141,6 +150,9 @@ class PurchaseOrderController extends Controller
                 'message' => 'Cannot delete a confirmed order. Cancel it first.',
             ], 422);
         }
+
+        // Dispatch entity deleted event before deletion
+        event(new EntityDeleted($purchaseOrder, request()->user()->id));
 
         $purchaseOrder->delete();
 

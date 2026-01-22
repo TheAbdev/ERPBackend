@@ -2,6 +2,9 @@
 
 namespace App\Modules\CRM\Http\Controllers;
 
+use App\Events\EntityCreated;
+use App\Events\EntityDeleted;
+use App\Events\EntityUpdated;
 use App\Http\Controllers\Controller;
 use App\Modules\CRM\Http\Requests\StoreLeadRequest;
 use App\Modules\CRM\Http\Requests\UpdateLeadRequest;
@@ -112,6 +115,9 @@ class LeadController extends Controller
 
         $lead->load(['creator', 'assignee']);
 
+        // Dispatch entity created event
+        event(new EntityCreated($lead, $request->user()->id));
+
         return response()->json([
             'data' => new LeadResource($lead),
             'message' => 'Lead created successfully.',
@@ -203,6 +209,9 @@ class LeadController extends Controller
         $lead->update($request->validated());
         $lead->load(['creator', 'assignee']);
 
+        // Dispatch entity updated event
+        event(new EntityUpdated($lead, $request->user()->id));
+
         return response()->json([
             'data' => new LeadResource($lead),
             'message' => 'Lead updated successfully.',
@@ -242,6 +251,9 @@ class LeadController extends Controller
     public function destroy(Lead $lead): JsonResponse
     {
         $this->authorize('delete', $lead);
+
+        // Dispatch entity deleted event before deletion
+        event(new EntityDeleted($lead, request()->user()->id));
 
         $lead->delete();
 

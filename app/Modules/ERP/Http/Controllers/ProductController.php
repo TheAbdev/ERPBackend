@@ -2,7 +2,12 @@
 
 namespace App\Modules\ERP\Http\Controllers;
 
+use App\Events\EntityCreated;
+use App\Events\EntityDeleted;
+use App\Events\EntityUpdated;
 use App\Http\Controllers\Controller;
+use App\Modules\ECommerce\Models\ProductSync;
+use App\Modules\ECommerce\Models\Store;
 use App\Modules\ERP\Http\Requests\StoreProductRequest;
 use App\Modules\ERP\Http\Requests\UpdateProductRequest;
 use App\Modules\ERP\Http\Resources\ProductResource;
@@ -68,6 +73,25 @@ class ProductController extends Controller
         $this->authorize('create', Product::class);
 
         $product = Product::create($request->validated());
+        if($product->type === 'stock') {
+            $store=Store::where('tenant_id', $request->user()->tenant_id)->first();
+            if($store) {
+                $productSync=ProductSync::create([
+                    'tenant_id' => $request->user()->tenant_id,
+                    'product_id' => $product->id,
+                    'store_id' => $store->id,
+                    'is_synced' => true,
+                    'store_visibility' => true,
+                   // 'ecommerce_price' => $product->price,
+                   // 'ecommerce_images' => $product->images,
+                    'ecommerce_description' => $product->description,
+                    'sort_order' => 0,
+                ]);
+            }
+        }
+
+        // Dispatch entity created event
+        event(new EntityCreated($product, $request->user()->id));
 
         return response()->json([
             'message' => 'Product created successfully.',
@@ -103,6 +127,9 @@ class ProductController extends Controller
 
         $product->update($request->validated());
 
+        // Dispatch entity updated event
+        event(new EntityUpdated($product->fresh(), $request->user()->id));
+
         return response()->json([
             'message' => 'Product updated successfully.',
             'data' => new ProductResource($product->load(['category'])),
@@ -118,6 +145,9 @@ class ProductController extends Controller
     public function destroy(Product $product): JsonResponse
     {
         $this->authorize('delete', $product);
+
+        // Dispatch entity deleted event before deletion
+        event(new EntityDeleted($product, request()->user()->id));
 
         $product->delete();
 

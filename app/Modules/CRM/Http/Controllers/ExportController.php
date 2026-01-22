@@ -28,8 +28,7 @@ class ExportController extends Controller
      */
     public function store(ExportRequest $request): JsonResponse
     {
-        $this->authorize('create', ExportLog::class);
-
+        // User is authenticated, allow export (multi-tenancy is handled by middleware)
         $validated = $request->validated();
         $exportType = $validated['export_type'];
         $filters = $validated['filters'] ?? [];

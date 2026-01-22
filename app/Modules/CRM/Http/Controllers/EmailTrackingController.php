@@ -60,3 +60,12 @@ class EmailTrackingController extends Controller
 
 
 
+
+
+
+
+
+
+
+
+

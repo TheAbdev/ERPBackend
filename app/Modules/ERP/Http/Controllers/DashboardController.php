@@ -40,16 +40,20 @@ class DashboardController extends Controller
 
             $period = $request->input('period', 'month');
             $tenantId = $request->user()->tenant_id;
+            $userId = $request->user()->isTenantOwner() ? null : $request->user()->id;
+            
             Log::info('Dashboard metrics request', [
                 'user_id' => $request->user()->id,
                 'tenant_id' => $tenantId,
                 'period' => $period,
+                'is_personal' => $userId !== null,
             ]);
 
-            $metrics = $this->reportService->generateDashboardMetrics();
+            $metrics = $this->reportService->generateDashboardMetrics($tenantId, $userId);
 
             Log::info('Dashboard metrics generated', [
                 'tenant_id' => $tenantId,
+                'user_id' => $userId,
                 'metrics' => $metrics,
             ]);
 
@@ -63,6 +67,57 @@ class DashboardController extends Controller
 
             return response()->json([
                 'message' => 'Failed to load dashboard metrics: ' . $e->getMessage(),
+                'error' => config('app.debug') ? $e->getTraceAsString() : null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Get personal metrics for regular users.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function personalMetrics(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            
+            // Only allow regular users (not tenant owners) to access personal metrics
+            if ($user->isTenantOwner()) {
+                return response()->json([
+                    'message' => 'Tenant owners should use the regular metrics endpoint.',
+                ], 403);
+            }
+
+            $period = $request->input('period', 'month');
+            $tenantId = $user->tenant_id;
+            $userId = $user->id;
+            
+            Log::info('Personal dashboard metrics request', [
+                'user_id' => $userId,
+                'tenant_id' => $tenantId,
+                'period' => $period,
+            ]);
+
+            $metrics = $this->reportService->generateDashboardMetrics($tenantId, $userId);
+
+            Log::info('Personal dashboard metrics generated', [
+                'tenant_id' => $tenantId,
+                'user_id' => $userId,
+                'metrics' => $metrics,
+            ]);
+
+            return response()->json([
+                'data' => new DashboardResource($metrics),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Personal dashboard metrics error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to load personal dashboard metrics: ' . $e->getMessage(),
                 'error' => config('app.debug') ? $e->getTraceAsString() : null,
             ], 500);
         }

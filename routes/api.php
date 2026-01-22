@@ -11,6 +11,29 @@ Route::prefix('auth')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
+// E-Commerce - Public Storefront Routes (No authentication required)
+Route::prefix('storefront')->group(function () {
+    Route::get('/{slug}', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getStore']);
+    Route::get('/{slug}/products', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getProducts']);
+    Route::get('/{slug}/products/{productId}', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getProduct']);
+    Route::get('/{slug}/pages/{pageSlug}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'getBySlug']);
+        Route::get('/{slug}/layout', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'getPublicLayout']);
+
+    // Cart
+    Route::prefix('{slug}/cart')->group(function () {
+        Route::get('/', [\App\Modules\ECommerce\Http\Controllers\CartController::class, 'getCart']);
+        Route::post('/items', [\App\Modules\ECommerce\Http\Controllers\CartController::class, 'addItem']);
+        Route::put('/items/{itemIndex}', [\App\Modules\ECommerce\Http\Controllers\CartController::class, 'updateItem']);
+        Route::delete('/items/{itemIndex}', [\App\Modules\ECommerce\Http\Controllers\CartController::class, 'removeItem']);
+    });
+
+    // Orders
+    Route::get('/{slug}/orders', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'listPublicOrders']);
+    Route::post('/{slug}/orders', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'createFromCart']);
+    Route::get('/{slug}/orders/{orderId}', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'getPublicOrder']);
+    Route::post('/{slug}/orders/{orderId}/payment', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'processPayment']);
+});
+
 // Protected routes (require authentication and tenant access)
 Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(function () {
     Route::prefix('auth')->group(function () {
@@ -298,6 +321,8 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::get('/model-timeline', [\App\Http\Controllers\AuditLogController::class, 'modelTimeline']);
         Route::get('/user/{userId}/timeline', [\App\Http\Controllers\AuditLogController::class, 'userTimeline']);
         Route::get('/recent', [\App\Http\Controllers\AuditLogController::class, 'recentActivity']);
+        Route::delete('/', [\App\Http\Controllers\AuditLogController::class, 'destroy']);
+
     });
 
     // Queue Monitoring
@@ -511,6 +536,7 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
 
     Route::prefix('erp/dashboard')->middleware(['tenant.rate_limit:60,1'])->group(function () {
         Route::get('/metrics', [\App\Modules\ERP\Http\Controllers\DashboardController::class, 'metrics']);
+        Route::get('/personal-metrics', [\App\Modules\ERP\Http\Controllers\DashboardController::class, 'personalMetrics']);
         Route::get('/recent-activities', [\App\Modules\ERP\Http\Controllers\DashboardController::class, 'recentActivities']);
         Route::get('/module-summary', [\App\Modules\ERP\Http\Controllers\DashboardController::class, 'moduleSummary']);
     });
@@ -547,7 +573,7 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
     // ERP Notifications (if not already added)
     Route::prefix('erp/notifications')->middleware(['tenant.rate_limit:60,1'])->group(function () {
         Route::get('/', [\App\Modules\ERP\Http\Controllers\NotificationController::class, 'index']);
-        Route::post('/mark-read', [\App\Modules\ERP\Http\Controllers\NotificationController::class, 'markRead']);
+        Route::post('/{notification}/mark-read', [\App\Modules\ERP\Http\Controllers\NotificationController::class, 'markRead']);
         Route::post('/mark-all-read', [\App\Modules\ERP\Http\Controllers\NotificationController::class, 'markAllRead']);
         Route::get('/unread-count', [\App\Modules\ERP\Http\Controllers\NotificationController::class, 'unreadCount']);
     });
@@ -601,6 +627,69 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::patch('/{project}/tasks/{projectTask}', [\App\Modules\ERP\Http\Controllers\ProjectTaskController::class, 'update']);
         Route::delete('/{project}/tasks/{projectTask}', [\App\Modules\ERP\Http\Controllers\ProjectTaskController::class, 'destroy']);
     });
+
+    // E-Commerce - Admin Routes
+    Route::prefix('ecommerce')->middleware(['tenant.rate_limit:60,1'])->group(function () {
+        // File Upload
+        Route::prefix('upload')->group(function () {
+            Route::post('/image', [\App\Modules\ECommerce\Http\Controllers\FileUploadController::class, 'uploadImage']);
+        });
+
+        // Stores
+        Route::prefix('stores')->group(function () {
+            Route::get('/', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'index']);
+            Route::post('/', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'store']);
+            Route::get('/{store}', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'show']);
+            Route::put('/{store}', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'update']);
+            Route::delete('/{store}', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'destroy']);
+            Route::get('/{store}/layout', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'getLayout']);
+            Route::put('/{store}/layout', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'updateLayout']);
+        });
+
+        // Themes
+        Route::prefix('themes')->group(function () {
+            Route::get('/', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'index']);
+            Route::get('/templates', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'templates']);
+            Route::post('/', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'store']);
+            Route::post('/from-template', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'createFromTemplate']);
+            Route::get('/{theme}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'show']);
+            Route::put('/{theme}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'update']);
+            Route::delete('/{theme}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'destroy']);
+        });
+
+        // Orders
+        Route::prefix('orders')->group(function () {
+            Route::get('/', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'index']);
+            Route::get('/{order}', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'show']);
+            Route::put('/{order}', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'update']);
+        });
+
+        // Pages
+        Route::prefix('pages')->group(function () {
+            Route::get('/', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'index']);
+            Route::post('/', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'store']);
+            Route::get('/{page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'show']);
+            Route::put('/{page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'update']);
+            Route::delete('/{page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'destroy']);
+        });
+
+        // Page Builder
+        Route::prefix('page-builder')->group(function () {
+            Route::get('/block-types', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'getBlockTypes']);
+            Route::get('/reusable-blocks', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'getReusableBlocks']);
+            Route::post('/reusable-blocks', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'createReusableBlock']);
+            Route::post('/pages/{page}/content', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'savePageContent']);
+        });
+
+        // Product Sync
+        Route::prefix('product-sync')->group(function () {
+            Route::get('/status', [\App\Modules\ECommerce\Http\Controllers\ProductSyncController::class, 'getStatus']);
+            Route::post('/sync', [\App\Modules\ECommerce\Http\Controllers\ProductSyncController::class, 'sync']);
+            Route::post('/unsync', [\App\Modules\ECommerce\Http\Controllers\ProductSyncController::class, 'unsync']);
+            Route::post('/sync-all', [\App\Modules\ECommerce\Http\Controllers\ProductSyncController::class, 'syncAll']);
+        });
+    });
+
 
     // Timesheets
     Route::prefix('erp/timesheets')->group(function () {

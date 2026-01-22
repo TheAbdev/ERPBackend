@@ -200,13 +200,30 @@ class User extends Authenticatable
      */
     public function getPermissions()
     {
-        return $this->roles()
+        $roles = $this->roles()
             ->wherePivot('tenant_id', $this->tenant_id)
             ->with('permissions')
-            ->get()
-            ->pluck('permissions')
+            ->get();
+
+        \Illuminate\Support\Facades\Log::info('User permissions loading', [
+            'user_id' => $this->id,
+            'tenant_id' => $this->tenant_id,
+            'roles_count' => $roles->count(),
+            'roles' => $roles->pluck('name')->toArray(),
+        ]);
+
+        $permissions = $roles->pluck('permissions')
             ->flatten()
             ->unique('id');
+
+        \Illuminate\Support\Facades\Log::info('User permissions loaded', [
+            'user_id' => $this->id,
+            'tenant_id' => $this->tenant_id,
+            'permissions_count' => $permissions->count(),
+            'permission_slugs' => $permissions->pluck('slug')->toArray(),
+        ]);
+
+        return $permissions;
     }
 
     /**

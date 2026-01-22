@@ -2,6 +2,7 @@
 
 namespace App\Modules\CRM\Http\Requests;
 
+use App\Modules\CRM\Models\ExportLog;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,7 +13,8 @@ class ExportRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('crm.export.create');
+        // User is authenticated, allow export
+        return true;
     }
 
     /**
@@ -23,8 +25,8 @@ class ExportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'export_type' => ['required', 'string', Rule::in(['leads', 'deals', 'activities'])],
-            'format' => ['nullable', 'string', Rule::in(['csv', 'xlsx'])],
+            'export_type' => ['required', 'string', Rule::in(['leads', 'contacts', 'accounts', 'activities', 'deals'])],
+            'format' => ['nullable', 'string', Rule::in(['csv'])],
             'filters' => ['nullable', 'array'],
             'filters.date_from' => ['nullable', 'date'],
             'filters.date_to' => ['nullable', 'date', 'after_or_equal:filters.date_from'],

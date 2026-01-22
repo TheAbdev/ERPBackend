@@ -93,3 +93,12 @@ class EmailTemplateControllerTest extends TestCase
 
 
 
+
+
+
+
+
+
+
+
+

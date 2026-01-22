@@ -39,3 +39,12 @@ class EmailCampaignFactory extends Factory
 
 
 
+
+
+
+
+
+
+
+
+

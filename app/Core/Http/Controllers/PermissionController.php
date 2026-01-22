@@ -91,10 +91,37 @@ class PermissionController extends Controller
             })->values();
         })->toArray();
 
+        // Load functional groups from config
+        $functionalGroups = [];
+        $permissionGroups = config('permission_groups.groups', []);
+        $permissionSlugs = $permissions->pluck('slug')->toArray();
+
+        foreach ($permissionGroups as $groupKey => $groupConfig) {
+            // Check if any permission in this group exists in user's permissions
+            $groupPermissions = array_intersect($groupConfig['permissions'], $permissionSlugs);
+            
+            if (!empty($groupPermissions)) {
+                // Get permission IDs for permissions in this group
+                $groupPermissionIds = $permissions
+                    ->whereIn('slug', $groupPermissions)
+                    ->pluck('id')
+                    ->toArray();
+
+                $functionalGroups[$groupKey] = [
+                    'key' => $groupKey,
+                    'name' => $groupConfig['name'],
+                    'description' => $groupConfig['description'] ?? '',
+                    'permission_ids' => $groupPermissionIds,
+                    'permission_slugs' => $groupPermissions,
+                ];
+            }
+        }
+
         return response()->json([
             'success' => true,
             'data' => $permissionsArray,
             'grouped' => $grouped,
+            'functional_groups' => $functionalGroups,
         ]);
     }
 }

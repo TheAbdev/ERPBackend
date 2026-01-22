@@ -2,6 +2,9 @@
 
 namespace App\Modules\ERP\Http\Controllers;
 
+use App\Events\EntityCreated;
+use App\Events\EntityDeleted;
+use App\Events\EntityUpdated;
 use App\Http\Controllers\Controller;
 use App\Modules\ERP\Http\Resources\WarehouseResource;
 use App\Modules\ERP\Models\Warehouse;
@@ -83,6 +86,9 @@ class WarehouseController extends Controller
 
         $warehouse = Warehouse::create($validated);
 
+        // Dispatch entity created event
+        event(new EntityCreated($warehouse, $request->user()->id));
+
         return response()->json([
             'message' => 'Warehouse created successfully.',
             'data' => new WarehouseResource($warehouse),
@@ -143,6 +149,9 @@ class WarehouseController extends Controller
 
         $warehouse->update($validated);
 
+        // Dispatch entity updated event
+        event(new EntityUpdated($warehouse->fresh(), $request->user()->id));
+
         return response()->json([
             'message' => 'Warehouse updated successfully.',
             'data' => new WarehouseResource($warehouse),
@@ -159,6 +168,9 @@ class WarehouseController extends Controller
     {
         $this->authorize('delete', $warehouse);
 
+        // Dispatch entity deleted event before deletion
+        event(new EntityDeleted($warehouse, request()->user()->id));
+
         $warehouse->delete();
 
         return response()->json([
@@ -166,6 +178,10 @@ class WarehouseController extends Controller
         ]);
     }
 }
+
+
+
+
 
 
 

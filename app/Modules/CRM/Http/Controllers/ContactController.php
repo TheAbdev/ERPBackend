@@ -2,6 +2,9 @@
 
 namespace App\Modules\CRM\Http\Controllers;
 
+use App\Events\EntityCreated;
+use App\Events\EntityDeleted;
+use App\Events\EntityUpdated;
 use App\Http\Controllers\Controller;
 use App\Modules\CRM\Http\Requests\StoreContactRequest;
 use App\Modules\CRM\Http\Requests\UpdateContactRequest;
@@ -45,6 +48,9 @@ class ContactController extends Controller
 
         $contact->load(['creator', 'lead']);
 
+        // Dispatch entity created event
+        event(new EntityCreated($contact, $request->user()->id));
+
         return response()->json([
             'data' => new ContactResource($contact),
             'message' => 'Contact created successfully.',
@@ -82,6 +88,9 @@ class ContactController extends Controller
         $contact->update($request->validated());
         $contact->load(['creator', 'lead']);
 
+        // Dispatch entity updated event
+        event(new EntityUpdated($contact, $request->user()->id));
+
         return response()->json([
             'data' => new ContactResource($contact),
             'message' => 'Contact updated successfully.',
@@ -97,6 +106,9 @@ class ContactController extends Controller
     public function destroy(Contact $contact): JsonResponse
     {
         $this->authorize('delete', $contact);
+
+        // Dispatch entity deleted event before deletion
+        event(new EntityDeleted($contact, request()->user()->id));
 
         $contact->delete();
 

@@ -19,7 +19,7 @@ class ProductBundlePolicy extends ErpBasePolicy
     /**
      * Determine if the user can view the product bundle.
      */
-    public function view(User $user, ProductBundle $productBundle): bool
+    public function view(User $user, $productBundle): bool
     {
         return $this->checkTenantAccess($user, $productBundle)
             && $this->checkPermission($user, 'erp.products.view');
@@ -36,7 +36,7 @@ class ProductBundlePolicy extends ErpBasePolicy
     /**
      * Determine if the user can update the product bundle.
      */
-    public function update(User $user, ProductBundle $productBundle): bool
+    public function update(User $user, $productBundle): bool
     {
         return $this->checkTenantAccess($user, $productBundle)
             && $this->checkPermission($user, 'erp.products.update');
@@ -51,6 +51,15 @@ class ProductBundlePolicy extends ErpBasePolicy
             && $this->checkPermission($user, 'erp.products.delete');
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 

@@ -30,6 +30,20 @@ return [
         'core.permissions.view',
         'core.permissions.viewAny',
 
+        'core.teams.view',
+        'core.teams.viewAny',
+        'core.teams.create',
+        'core.teams.update',
+        'core.teams.delete',
+        'core.teams.restore',
+
+        'core.custom_fields.view',
+        'core.custom_fields.viewAny',
+        'core.custom_fields.create',
+        'core.custom_fields.update',
+        'core.custom_fields.delete',
+        'core.custom_fields.restore',
+
         'core.tenants.view',
         'core.tenants.viewAny',
         'core.tenants.create',
@@ -39,6 +53,7 @@ return [
 
         'core.audit_logs.view',
         'core.audit_logs.viewAny',
+        'core.audit_logs.delete',
 
         'platform.manage',
 
@@ -126,6 +141,13 @@ return [
         'crm.calendar_integrations.create',
         'crm.calendar_integrations.update',
         'crm.calendar_integrations.delete',
+
+        'crm.lead_assignment_rules.view',
+        'crm.lead_assignment_rules.viewAny',
+        'crm.lead_assignment_rules.create',
+        'crm.lead_assignment_rules.update',
+        'crm.lead_assignment_rules.delete',
+        'crm.lead_assignment_rules.restore',
 
         // ERP module permissions
         'erp.core.view',
@@ -215,6 +237,13 @@ return [
         'erp.invoices.delete',
         'erp.invoices.restore',
 
+        'erp.recurring_invoices.view',
+        'erp.recurring_invoices.viewAny',
+        'erp.recurring_invoices.create',
+        'erp.recurring_invoices.update',
+        'erp.recurring_invoices.delete',
+        'erp.recurring_invoices.restore',
+
         'erp.credit_notes.view',
         'erp.credit_notes.viewAny',
         'erp.credit_notes.create',
@@ -228,6 +257,20 @@ return [
         'erp.expenses.update',
         'erp.expenses.delete',
         'erp.expenses.restore',
+
+        'erp.expense_categories.view',
+        'erp.expense_categories.viewAny',
+        'erp.expense_categories.create',
+        'erp.expense_categories.update',
+        'erp.expense_categories.delete',
+        'erp.expense_categories.restore',
+
+        'erp.reports.view',
+        'erp.reports.viewAny',
+        'erp.reports.create',
+        'erp.reports.update',
+        'erp.reports.delete',
+        'erp.reports.restore',
 
         'erp.payment_gateways.view',
         'erp.payment_gateways.viewAny',
@@ -256,6 +299,35 @@ return [
         'core.custom_dashboards.update',
         'core.custom_dashboards.delete',
         'core.custom_dashboards.restore',
+
+        // E-Commerce module permissions
+        'ecommerce.stores.view',
+        'ecommerce.stores.viewAny',
+        'ecommerce.stores.create',
+        'ecommerce.stores.update',
+        'ecommerce.stores.delete',
+
+        'ecommerce.themes.view',
+        'ecommerce.themes.viewAny',
+        'ecommerce.themes.create',
+        'ecommerce.themes.update',
+        'ecommerce.themes.delete',
+
+        'ecommerce.orders.view',
+        'ecommerce.orders.viewAny',
+        'ecommerce.orders.update',
+
+        'ecommerce.pages.view',
+        'ecommerce.pages.viewAny',
+        'ecommerce.pages.create',
+        'ecommerce.pages.update',
+        'ecommerce.pages.delete',
+
+        'ecommerce.content_blocks.view',
+        'ecommerce.content_blocks.viewAny',
+        'ecommerce.content_blocks.create',
+        'ecommerce.content_blocks.update',
+        'ecommerce.content_blocks.delete',
     ],
 
     /*
@@ -272,6 +344,8 @@ return [
             'users',
             'roles',
             'permissions',
+            'teams',
+            'custom_fields',
             'tenants',
             'custom_dashboards',
         ],
@@ -289,6 +363,7 @@ return [
             'email_templates',
             'email_campaigns',
             'calendar_integrations',
+            'lead_assignment_rules',
         ],
         'erp' => [
             'core',
@@ -303,11 +378,21 @@ return [
             'accounting',
             'orders',
             'invoices',
+            'recurring_invoices',
             'credit_notes',
             'expenses',
+            'expense_categories',
+            'reports',
             'payment_gateways',
             'projects',
             'timesheets',
+        ],
+        'ecommerce' => [
+            'stores',
+            'themes',
+            'orders',
+            'pages',
+            'content_blocks',
         ],
     ],
 ];

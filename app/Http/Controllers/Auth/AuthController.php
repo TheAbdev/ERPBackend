@@ -80,8 +80,8 @@ class AuthController extends Controller
             ]);
         }
 
-        // Load user with tenant and roles to check permissions
-        $user->load('tenant', 'roles');
+        // Load user with tenant and roles with permissions to check permissions
+        $user->load('tenant', 'roles.permissions');
 
         // Check if user is Site Owner (has site_owner role or platform.manage permission)
         $isSiteOwner = $user->hasRole('site_owner') || $user->hasPermission('platform.manage');
@@ -147,6 +147,39 @@ class AuthController extends Controller
             \Illuminate\Support\Facades\Log::error('Failed to log login event', ['error' => $e->getMessage()]);
         }
 
+        // Get user roles and permissions for frontend
+        $roles = $user->roles()
+            ->wherePivot('tenant_id', $user->tenant_id)
+            ->get()
+            ->map(function ($role) {
+                return [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                    'slug' => $role->slug,
+                ];
+            });
+
+        $permissions = $user->getPermissions()
+            ->map(function ($permission) {
+                return [
+                    'id' => $permission->id,
+                    'name' => $permission->name,
+                    'slug' => $permission->slug,
+                    'module' => $permission->module ?? '',
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        // Log permissions for debugging
+        \Illuminate\Support\Facades\Log::info('Login response permissions', [
+            'user_id' => $user->id,
+            'tenant_id' => $user->tenant_id,
+            'roles_count' => $roles->count(),
+            'permissions_count' => count($permissions),
+            'permission_slugs' => array_column($permissions, 'slug'),
+        ]);
+
         // Add flags to user object for frontend
         $userData = $user->toArray();
         $userData['is_site_owner'] = $isSiteOwner;
@@ -154,6 +187,9 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => $userData,
+            'roles' => $roles,
+            'permissions' => $permissions,
+            'tenant_id' => $user->tenant_id,
             'token' => $token,
         ]);
     }

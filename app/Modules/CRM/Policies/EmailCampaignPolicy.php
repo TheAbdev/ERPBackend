@@ -17,3 +17,12 @@ class EmailCampaignPolicy extends \App\Policies\BasePolicy
 
 
 
+
+
+
+
+
+
+
+
+

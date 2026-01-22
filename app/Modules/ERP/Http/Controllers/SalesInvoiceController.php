@@ -2,6 +2,9 @@
 
 namespace App\Modules\ERP\Http\Controllers;
 
+use App\Events\EntityCreated;
+use App\Events\EntityDeleted;
+use App\Events\EntityUpdated;
 use App\Http\Controllers\Controller;
 use App\Modules\ERP\Http\Requests\IssueInvoiceRequest;
 use App\Modules\ERP\Http\Requests\StoreSalesInvoiceRequest;
@@ -99,6 +102,9 @@ class SalesInvoiceController extends Controller
             return $invoice->load('items');
         });
 
+        // Dispatch entity created event
+        event(new EntityCreated($invoice, $request->user()->id));
+
         return response()->json([
             'message' => 'Sales invoice created successfully.',
             'data' => new SalesInvoiceResource($invoice),
@@ -157,6 +163,9 @@ class SalesInvoiceController extends Controller
             return $salesInvoice->fresh()->load('items');
         });
 
+        // Dispatch entity updated event
+        event(new EntityUpdated($salesInvoice, $request->user()->id));
+
         return response()->json([
             'message' => 'Sales invoice updated successfully.',
             'data' => new SalesInvoiceResource($salesInvoice),
@@ -178,6 +187,9 @@ class SalesInvoiceController extends Controller
                 'message' => 'Cannot delete invoice. Only draft invoices can be deleted.',
             ], 422);
         }
+
+        // Dispatch entity deleted event before deletion
+        event(new EntityDeleted($salesInvoice, request()->user()->id));
 
         $salesInvoice->delete();
 

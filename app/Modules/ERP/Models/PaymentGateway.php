@@ -42,7 +42,7 @@ class PaymentGateway extends Model
         return [
             'is_active' => 'boolean',
             'is_default' => 'boolean',
-            'credentials' => 'array',
+            // credentials is handled by mutator/accessor, don't cast it
             'settings' => 'array',
         ];
     }

@@ -235,6 +235,100 @@ class DealsReportService
     }
 
     /**
+     * Get total deals count.
+     *
+     * @param  array  $filters
+     * @return int
+     */
+    public function getTotalDeals(array $filters = []): int
+    {
+        return $this->buildQuery($filters)->count();
+    }
+
+    /**
+     * Get deals grouped by stage.
+     *
+     * @param  array  $filters
+     * @return array
+     */
+    public function getByStage(array $filters = []): array
+    {
+        $query = Deal::where('deals.tenant_id', $this->tenantContext->getTenantId())
+            ->join('pipeline_stages', 'deals.stage_id', '=', 'pipeline_stages.id')
+            ->select(
+                'pipeline_stages.name as stage',
+                DB::raw('COUNT(deals.id) as count'),
+                DB::raw('COALESCE(SUM(deals.amount), 0) as value')
+            );
+
+        if (isset($filters['date_from'])) {
+            $query->whereDate('deals.created_at', '>=', $filters['date_from']);
+        }
+
+        if (isset($filters['date_to'])) {
+            $query->whereDate('deals.created_at', '<=', $filters['date_to']);
+        }
+
+        return $query->groupBy('pipeline_stages.id', 'pipeline_stages.name')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'stage' => $item->stage,
+                    'count' => (int) $item->count,
+                    'value' => (float) $item->value,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get deals grouped by status.
+     *
+     * @param  array  $filters
+     * @return array
+     */
+    public function getByStatus(array $filters = []): array
+    {
+        $query = $this->buildQuery($filters)
+            ->select(
+                'status',
+                DB::raw('COUNT(id) as count'),
+                DB::raw('COALESCE(SUM(amount), 0) as value')
+            );
+
+        return $query->groupBy('status')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'status' => $item->status ?? 'unknown',
+                    'count' => (int) $item->count,
+                    'value' => (float) $item->value,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get win rate (percentage of won deals).
+     *
+     * @param  array  $filters
+     * @return float
+     */
+    public function getWinRate(array $filters = []): float
+    {
+        $query = $this->buildQuery($filters);
+
+        $total = (clone $query)->count();
+        if ($total === 0) {
+            return 0;
+        }
+
+        $won = (clone $query)->where('status', 'won')->count();
+
+        return round(($won / $total) * 100, 2);
+    }
+
+    /**
      * Build base query with filters.
      *
      * @param  array  $filters

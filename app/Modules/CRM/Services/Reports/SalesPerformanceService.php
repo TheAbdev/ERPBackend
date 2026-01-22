@@ -161,6 +161,92 @@ class SalesPerformanceService
     }
 
     /**
+     * Get total revenue from won deals.
+     *
+     * @param  array  $filters
+     * @return float
+     */
+    public function getTotalRevenue(array $filters = []): float
+    {
+        $query = $this->buildQuery($filters)->where('status', 'won');
+        return (float) ($query->sum('amount') ?? 0);
+    }
+
+    /**
+     * Get revenue grouped by period.
+     *
+     * @param  array  $filters
+     * @return array
+     */
+    public function getByPeriod(array $filters = []): array
+    {
+        $query = $this->buildQuery($filters)
+            ->where('status', 'won')
+            ->select(
+                DB::raw('DATE(created_at) as period'),
+                DB::raw('SUM(amount) as revenue')
+            );
+
+        return $query->groupBy('period')
+            ->orderBy('period', 'asc')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'period' => $item->period,
+                    'revenue' => (float) $item->revenue,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get sales by user.
+     *
+     * @param  array  $filters
+     * @return array
+     */
+    public function getByUser(array $filters = []): array
+    {
+        $query = $this->buildQuery($filters)
+            ->where('status', 'won')
+            ->whereNotNull('assigned_to')
+            ->select(
+                'assigned_to',
+                DB::raw('SUM(amount) as revenue'),
+                DB::raw('COUNT(*) as deals_count')
+            );
+
+        return $query->groupBy('assigned_to')
+            ->orderBy('revenue', 'desc')
+            ->get()
+            ->map(function ($item) {
+                $user = \App\Models\User::find($item->assigned_to);
+                return [
+                    'user' => $user ? $user->name : 'Unknown',
+                    'revenue' => (float) $item->revenue,
+                    'deals_count' => (int) $item->deals_count,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get average deal size from won deals.
+     *
+     * @param  array  $filters
+     * @return float
+     */
+    public function getAverageDealSize(array $filters = []): float
+    {
+        $query = $this->buildQuery($filters)->where('status', 'won');
+        
+        $total = (float) ($query->sum('amount') ?? 0);
+        $count = (clone $query)->count();
+
+        return $count > 0 ? round($total / $count, 2) : 0;
+    }
+
+    /**
      * Build base query with filters.
      *
      * @param  array  $filters

@@ -129,6 +129,82 @@ class ActivitiesReportService
     }
 
     /**
+     * Get total activities count.
+     *
+     * @param  array  $filters
+     * @return int
+     */
+    public function getTotalActivities(array $filters = []): int
+    {
+        return $this->buildQuery($filters)->count();
+    }
+
+    /**
+     * Get activities grouped by type.
+     *
+     * @param  array  $filters
+     * @return array
+     */
+    public function getByType(array $filters = []): array
+    {
+        return $this->buildQuery($filters)
+            ->select('type', DB::raw('count(*) as count'))
+            ->whereNotNull('type')
+            ->groupBy('type')
+            ->orderBy('count', 'desc')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'type' => $item->type,
+                    'count' => (int) $item->count,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get activities grouped by status.
+     *
+     * @param  array  $filters
+     * @return array
+     */
+    public function getByStatus(array $filters = []): array
+    {
+        return $this->buildQuery($filters)
+            ->select('status', DB::raw('count(*) as count'))
+            ->whereNotNull('status')
+            ->groupBy('status')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'status' => $item->status,
+                    'count' => (int) $item->count,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get completion rate (percentage of completed activities).
+     *
+     * @param  array  $filters
+     * @return float
+     */
+    public function getCompletionRate(array $filters = []): float
+    {
+        $query = $this->buildQuery($filters);
+        
+        $total = (clone $query)->count();
+        if ($total === 0) {
+            return 0;
+        }
+
+        $completed = (clone $query)->where('status', 'completed')->count();
+
+        return round(($completed / $total) * 100, 2);
+    }
+
+    /**
      * Build base query with filters.
      *
      * @param  array  $filters

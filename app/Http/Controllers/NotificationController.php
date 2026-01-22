@@ -36,17 +36,17 @@ class NotificationController extends Controller
             'data' => $notifications->map(function ($notification) {
                 // Extract data from Laravel notification structure
                 $data = $notification->data ?? [];
-                
+
                 // Handle different notification types
                 $title = $data['title'] ?? $data['subject'] ?? $data['deal_title'] ?? 'Notification';
                 $message = $data['message'] ?? $data['body'] ?? '';
-                
+
                 // For DealStatusNotification, extract deal information
                 if (isset($data['deal_title'])) {
                     $title = "Deal: {$data['deal_title']}";
                     $message = $data['message'] ?? "Deal '{$data['deal_title']}' has been updated.";
                 }
-                
+
                 return [
                     'id' => $notification->id,
                     'type' => $data['type'] ?? 'info', // Extract type from data or use notification type
@@ -106,10 +106,8 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        $count = ErpNotification::where('tenant_id', $user->tenant_id)
-            ->where('user_id', $user->id)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
+        // Use User's unreadNotifications() relationship
+        $count = $user->unreadNotifications()->update(['read_at' => now()]);
 
         return response()->json([
             'message' => "{$count} notification(s) marked as read.",

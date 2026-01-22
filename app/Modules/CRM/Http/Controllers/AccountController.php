@@ -2,6 +2,9 @@
 
 namespace App\Modules\CRM\Http\Controllers;
 
+use App\Events\EntityCreated;
+use App\Events\EntityDeleted;
+use App\Events\EntityUpdated;
 use App\Http\Controllers\Controller;
 use App\Modules\CRM\Http\Requests\StoreAccountRequest;
 use App\Modules\CRM\Http\Requests\UpdateAccountRequest;
@@ -52,6 +55,9 @@ class AccountController extends Controller
 
         $account->load(['creator', 'parent', 'children', 'contacts']);
 
+        // Dispatch entity created event
+        event(new EntityCreated($account, $request->user()->id));
+
         return response()->json([
             'data' => new AccountResource($account),
             'message' => 'Account created successfully.',
@@ -89,6 +95,9 @@ class AccountController extends Controller
         $account->update($request->validated());
         $account->load(['creator', 'parent', 'children', 'contacts']);
 
+        // Dispatch entity updated event
+        event(new EntityUpdated($account, $request->user()->id));
+
         return response()->json([
             'data' => new AccountResource($account),
             'message' => 'Account updated successfully.',
@@ -104,6 +113,9 @@ class AccountController extends Controller
     public function destroy(Account $account): JsonResponse
     {
         $this->authorize('delete', $account);
+
+        // Dispatch entity deleted event before deletion
+        event(new EntityDeleted($account, request()->user()->id));
 
         $account->delete();
 

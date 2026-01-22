@@ -11,17 +11,23 @@ class ExportService
 {
     protected TenantContext $tenantContext;
     protected LeadExportService $leadExportService;
+    protected ContactExportService $contactExportService;
+    protected AccountExportService $accountExportService;
     protected DealExportService $dealExportService;
     protected ActivityExportService $activityExportService;
 
     public function __construct(
         TenantContext $tenantContext,
         LeadExportService $leadExportService,
+        ContactExportService $contactExportService,
+        AccountExportService $accountExportService,
         DealExportService $dealExportService,
         ActivityExportService $activityExportService
     ) {
         $this->tenantContext = $tenantContext;
         $this->leadExportService = $leadExportService;
+        $this->contactExportService = $contactExportService;
+        $this->accountExportService = $accountExportService;
         $this->dealExportService = $dealExportService;
         $this->activityExportService = $activityExportService;
     }
@@ -42,6 +48,8 @@ class ExportService
         // Get data based on type
         $data = match ($exportType) {
             'leads' => $this->leadExportService->export($filters),
+            'contacts' => $this->contactExportService->export($filters),
+            'accounts' => $this->accountExportService->export($filters),
             'deals' => $this->dealExportService->export($filters),
             'activities' => $this->activityExportService->export($filters),
             default => throw new \InvalidArgumentException("Unknown export type: {$exportType}"),
@@ -120,6 +128,12 @@ class ExportService
      */
     protected function generateCsv(array $data, string $filePath): void
     {
+        // Ensure directory exists
+        $directory = dirname(Storage::path($filePath));
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
         if (empty($data)) {
             Storage::put($filePath, '');
             return;

@@ -24,6 +24,7 @@ class Product extends ErpBaseModel
         'description',
         'barcode',
         'unit_of_measure',
+        'quantity',
         'is_tracked',
         'is_serialized',
         'is_batch_tracked',
@@ -39,6 +40,7 @@ class Product extends ErpBaseModel
     protected function casts(): array
     {
         return [
+            'quantity' => 'decimal:4',
             'is_tracked' => 'boolean',
             'is_serialized' => 'boolean',
             'is_batch_tracked' => 'boolean',

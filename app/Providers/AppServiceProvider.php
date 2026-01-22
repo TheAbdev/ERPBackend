@@ -101,6 +101,37 @@ class AppServiceProvider extends ServiceProvider
             \App\Core\Policies\AuditLogPolicy::class
         );
 
+        // E-Commerce Policies
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\ECommerce\Models\Store::class,
+            \App\Modules\ECommerce\Policies\StorePolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\ECommerce\Models\Theme::class,
+            \App\Modules\ECommerce\Policies\ThemePolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\ECommerce\Models\Order::class,
+            \App\Modules\ECommerce\Policies\OrderPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\ECommerce\Models\Page::class,
+            \App\Modules\ECommerce\Policies\PagePolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\ECommerce\Models\ContentBlock::class,
+            \App\Modules\ECommerce\Policies\ContentBlockPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\ECommerce\Models\ProductSync::class,
+            \App\Modules\ECommerce\Policies\ProductSyncPolicy::class
+        );
+
         \Illuminate\Support\Facades\Gate::policy(
             \App\Core\Models\Tenant::class,
             \App\Platform\Policies\TenantPolicy::class
@@ -300,6 +331,10 @@ class AppServiceProvider extends ServiceProvider
         // Register observers
         \App\Modules\CRM\Models\Lead::observe(\App\Observers\LeadObserver::class);
         \App\Modules\CRM\Models\Deal::observe(\App\Modules\CRM\Observers\DealObserver::class);
+        
+        // Register E-Commerce observers
+        \App\Modules\ERP\Models\Product::observe(\App\Observers\ProductObserver::class);
+        \App\Modules\ERP\Models\SalesOrder::observe(\App\Observers\SalesOrderObserver::class);
 
         // Register cache invalidation observers for CRM models
         \App\Modules\CRM\Models\Lead::observe(\App\Observers\CacheInvalidationObserver::class);

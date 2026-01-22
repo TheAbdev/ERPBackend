@@ -38,3 +38,12 @@ class WarehouseResource extends JsonResource
 
 
 
+
+
+
+
+
+
+
+
+

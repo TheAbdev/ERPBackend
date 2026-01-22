@@ -4,6 +4,15 @@ namespace App\Modules\ERP\Services;
 
 use App\Core\Services\TenantContext;
 use App\Modules\ERP\Models\Report;
+use App\Modules\ERP\Models\SalesOrder;
+use App\Modules\ERP\Models\SalesInvoice;
+use App\Modules\ERP\Models\Product;
+use App\Modules\ERP\Models\FixedAsset;
+use App\Modules\ERP\Models\Expense;
+use App\Modules\ERP\Models\JournalEntryLine;
+use App\Modules\CRM\Models\Deal;
+use App\Modules\CRM\Models\Lead;
+use App\Modules\CRM\Models\Contact;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -75,22 +84,29 @@ class ReportService extends BaseService
      * Generate dashboard metrics.
      *
      * @param  int|null  $tenantId
+     * @param  int|null  $userId
      * @return array
      */
-    public function generateDashboardMetrics(?int $tenantId = null): array
+    public function generateDashboardMetrics(?int $tenantId = null, ?int $userId = null): array
     {
         $tenantId = $tenantId ?? $this->getTenantId();
-        $cacheKey = "dashboard_metrics_{$tenantId}";
+        $cacheKey = $userId 
+            ? "dashboard_metrics_{$tenantId}_user_{$userId}"
+            : "dashboard_metrics_{$tenantId}";
 
-        return Cache::remember($cacheKey, 300, function () use ($tenantId) {
-            \Illuminate\Support\Facades\Log::info('Generating dashboard metrics', ['tenant_id' => $tenantId]);
+        return Cache::remember($cacheKey, 300, function () use ($tenantId, $userId) {
+            \Illuminate\Support\Facades\Log::info('Generating dashboard metrics', [
+                'tenant_id' => $tenantId,
+                'user_id' => $userId,
+            ]);
 
-            $erpMetrics = $this->getErpMetrics($tenantId);
-            $crmMetrics = $this->getCrmMetrics($tenantId);
-            $financialMetrics = $this->getFinancialMetrics($tenantId);
+            $erpMetrics = $this->getErpMetrics($tenantId, $userId);
+            $crmMetrics = $this->getCrmMetrics($tenantId, $userId);
+            $financialMetrics = $this->getFinancialMetrics($tenantId, $userId);
 
             \Illuminate\Support\Facades\Log::info('Dashboard metrics calculated', [
                 'tenant_id' => $tenantId,
+                'user_id' => $userId,
                 'erp' => $erpMetrics,
                 'crm' => $crmMetrics,
                 'financial' => $financialMetrics,
@@ -108,36 +124,51 @@ class ReportService extends BaseService
      * Get ERP metrics.
      *
      * @param  int  $tenantId
+     * @param  int|null  $userId
      * @return array
      */
-    protected function getErpMetrics(int $tenantId): array
+    protected function getErpMetrics(int $tenantId, ?int $userId = null): array
     {
+        // Base query for ERP models that only have 'created_by' column
+        $baseQuery = function ($model) use ($tenantId, $userId) {
+            $query = $model::where('tenant_id', $tenantId);
+            if ($userId) {
+                $query->where('created_by', $userId);
+            }
+            return $query;
+        };
+
         // Calculate total sales from sales orders
-        $totalSales = \App\Modules\ERP\Models\SalesOrder::where('tenant_id', $tenantId)
+        $totalSales = (clone $baseQuery(SalesOrder::class))
             ->where('status', '!=', 'cancelled')
             ->sum('total_amount') ?? 0;
 
         // Get pending orders count
-        $pendingOrders = \App\Modules\ERP\Models\SalesOrder::where('tenant_id', $tenantId)
+        $pendingOrders = (clone $baseQuery(SalesOrder::class))
             ->whereIn('status', ['pending', 'confirmed', 'processing'])
             ->count();
 
         // Get completed orders count
-        $completedOrders = \App\Modules\ERP\Models\SalesOrder::where('tenant_id', $tenantId)
+        $completedOrders = (clone $baseQuery(SalesOrder::class))
             ->where('status', 'completed')
             ->count();
 
         return [
-            'total_products' => \App\Modules\ERP\Models\Product::where('tenant_id', $tenantId)->count(),
+            // Products don't have created_by, so show all tenant products regardless of user
+            'total_products' => Product::where('tenant_id', $tenantId)->count(),
             'total_sales' => (float) $totalSales,
             'pending_orders' => $pendingOrders,
             'completed_orders' => $completedOrders,
-            'total_invoices' => \App\Modules\ERP\Models\SalesInvoice::where('tenant_id', $tenantId)
+            'total_invoices' => (clone $baseQuery(SalesInvoice::class))
                 ->where('status', 'issued')->count(),
-            'pending_invoices' => \App\Modules\ERP\Models\SalesInvoice::where('tenant_id', $tenantId)
+            'pending_invoices' => (clone $baseQuery(SalesInvoice::class))
                 ->where('status', 'draft')->count(),
-            'total_assets' => \App\Modules\ERP\Models\FixedAsset::where('tenant_id', $tenantId)
-                ->where('status', 'active')->count(),
+            'total_assets' => $userId
+                ? FixedAsset::where('tenant_id', $tenantId)
+                    ->where('status', 'active')
+                    ->where('created_by', $userId)->count()
+                : FixedAsset::where('tenant_id', $tenantId)
+                    ->where('status', 'active')->count(),
         ];
     }
 
@@ -145,27 +176,49 @@ class ReportService extends BaseService
      * Get CRM metrics.
      *
      * @param  int  $tenantId
+     * @param  int|null  $userId
      * @return array
      */
-    protected function getCrmMetrics(int $tenantId): array
+    protected function getCrmMetrics(int $tenantId, ?int $userId = null): array
     {
+        // Base query for CRM models that have both created_by and assigned_to (Lead, Deal)
+        $baseQuery = function ($model) use ($tenantId, $userId) {
+            $query = $model::where('tenant_id', $tenantId);
+            if ($userId) {
+                $query->where(function ($q) use ($userId) {
+                    $q->where('created_by', $userId)
+                      ->orWhere('assigned_to', $userId);
+                });
+            }
+            return $query;
+        };
+
+        // Base query for CRM models that only have created_by (Contact)
+        $baseQueryCreatedBy = function ($model) use ($tenantId, $userId) {
+            $query = $model::where('tenant_id', $tenantId);
+            if ($userId) {
+                $query->where('created_by', $userId);
+            }
+            return $query;
+        };
+
         // Calculate won deals value (using 'amount' column, not 'value')
-        $wonDealsValue = \App\Modules\CRM\Models\Deal::where('tenant_id', $tenantId)
+        $wonDealsValue = (clone $baseQuery(Deal::class))
             ->where('status', 'won')
             ->sum('amount') ?? 0;
 
         // Calculate open deals value (using 'amount' column, not 'value')
-        $openDealsValue = \App\Modules\CRM\Models\Deal::where('tenant_id', $tenantId)
+        $openDealsValue = (clone $baseQuery(Deal::class))
             ->whereIn('status', ['open', 'negotiation', 'proposal'])
             ->sum('amount') ?? 0;
 
         return [
-            'total_leads' => \App\Modules\CRM\Models\Lead::where('tenant_id', $tenantId)->count(),
-            'total_contacts' => \App\Modules\CRM\Models\Contact::where('tenant_id', $tenantId)->count(),
-            'total_deals' => \App\Modules\CRM\Models\Deal::where('tenant_id', $tenantId)->count(),
+            'total_leads' => $baseQuery(Lead::class)->count(),
+            'total_contacts' => $baseQueryCreatedBy(Contact::class)->count(),
+            'total_deals' => $baseQuery(Deal::class)->count(),
             'won_deals_value' => (float) $wonDealsValue,
             'open_deals_value' => (float) $openDealsValue,
-            'won_deals' => \App\Modules\CRM\Models\Deal::where('tenant_id', $tenantId)
+            'won_deals' => (clone $baseQuery(Deal::class))
                 ->where('status', 'won')->count(),
         ];
     }
@@ -174,9 +227,10 @@ class ReportService extends BaseService
      * Get financial metrics.
      *
      * @param  int  $tenantId
+     * @param  int|null  $userId
      * @return array
      */
-    protected function getFinancialMetrics(int $tenantId): array
+    protected function getFinancialMetrics(int $tenantId, ?int $userId = null): array
     {
         try {
             $fiscalPeriod = \App\Modules\ERP\Services\AccountingService::class;
@@ -198,11 +252,11 @@ class ReportService extends BaseService
             ];
         } catch (\Exception $e) {
             // Fallback: calculate from sales invoices and expenses
-            $totalRevenue = \App\Modules\ERP\Models\SalesInvoice::where('tenant_id', $tenantId)
+            $totalRevenue = SalesInvoice::where('tenant_id', $tenantId)
                 ->where('status', 'issued')
                 ->sum('total') ?? 0;
 
-            $totalExpenses = \App\Modules\ERP\Models\Expense::where('tenant_id', $tenantId)
+            $totalExpenses = Expense::where('tenant_id', $tenantId)
                 ->where('status', 'approved')
                 ->sum('amount') ?? 0;
 
@@ -226,7 +280,7 @@ class ReportService extends BaseService
      */
     protected function getTotalRevenue(int $tenantId, int $fiscalPeriodId): float
     {
-        return (float) \App\Modules\ERP\Models\JournalEntryLine::whereHas('journalEntry', function ($query) use ($tenantId, $fiscalPeriodId) {
+        return (float) JournalEntryLine::whereHas('journalEntry', function ($query) use ($tenantId, $fiscalPeriodId) {
             $query->where('tenant_id', $tenantId)
                 ->where('fiscal_period_id', $fiscalPeriodId)
                 ->where('status', 'posted');
@@ -246,7 +300,7 @@ class ReportService extends BaseService
      */
     protected function getTotalExpenses(int $tenantId, int $fiscalPeriodId): float
     {
-        return (float) \App\Modules\ERP\Models\JournalEntryLine::whereHas('journalEntry', function ($query) use ($tenantId, $fiscalPeriodId) {
+        return (float) JournalEntryLine::whereHas('journalEntry', function ($query) use ($tenantId, $fiscalPeriodId) {
             $query->where('tenant_id', $tenantId)
                 ->where('fiscal_period_id', $fiscalPeriodId)
                 ->where('status', 'posted');

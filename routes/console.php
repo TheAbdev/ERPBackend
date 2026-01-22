@@ -8,25 +8,29 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// CRM Scheduled Tasks
+
+
+
 Schedule::command('crm:check-activity-reminders')->everyFiveMinutes();
 
-// Sync email accounts every 5 minutes
+
 Schedule::command('crm:sync-email-accounts')
     ->name('crm-sync-email-accounts')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();
 
+// ============================================
 // ERP Scheduled Tasks
-// Check for scheduled reports every minute
+// ============================================
+
 Schedule::command('erp:generate-scheduled-reports')
     ->name('erp-generate-scheduled-reports')
     ->everyMinute()
     ->withoutOverlapping()
     ->runInBackground();
 
-// Check system health every 5 minutes
+
 Schedule::command('erp:check-system-health')
     ->name('erp-check-system-health')
     ->everyFiveMinutes()

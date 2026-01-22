@@ -45,6 +45,7 @@ class StoreProductRequest extends FormRequest
                 'max:50',
                 Rule::in(\App\Modules\ERP\Constants\UnitsOfMeasure::codes()),
             ],
+            'quantity' => ['nullable', 'numeric', 'min:0'],
             'is_tracked' => ['boolean'],
             'is_serialized' => ['boolean'],
             'is_batch_tracked' => ['boolean'],
