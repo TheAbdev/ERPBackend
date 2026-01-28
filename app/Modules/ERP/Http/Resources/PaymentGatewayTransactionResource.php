@@ -54,3 +54,14 @@ class PaymentGatewayTransactionResource extends JsonResource
 
 
 
+
+
+
+
+
+
+
+
+
+
+

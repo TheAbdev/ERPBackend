@@ -25,6 +25,8 @@ class StorefrontLayout extends ECommerceBaseModel
         'slug',
         'layout_json',
         'is_published',
+        'draft_layout',
+        'published_layout',
     ];
 
     /**
@@ -37,17 +39,9 @@ class StorefrontLayout extends ECommerceBaseModel
         return [
             'layout_json' => 'array',
             'is_published' => 'boolean',
+            'draft_layout' => 'array',
+            'published_layout' => 'array',
         ];
-    }
-
-    /**
-     * Get the tenant that owns the layout.
-     *
-     * @return BelongsTo
-     */
-    public function tenant(): BelongsTo
-    {
-        return $this->belongsTo(\App\Core\Models\Tenant::class);
     }
 
     /**
@@ -60,9 +54,3 @@ class StorefrontLayout extends ECommerceBaseModel
         return $this->belongsTo(Store::class);
     }
 }
-
-
-
-
-
-

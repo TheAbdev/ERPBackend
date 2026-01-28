@@ -4,35 +4,42 @@ namespace App\Modules\ECommerce\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\ECommerce\Models\Page;
+use App\Modules\ECommerce\Models\Store;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class PageController extends Controller
 {
-    /**
-     * Display a listing of pages.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Page::class);
 
-        $query = Page::where('tenant_id', $request->user()->tenant_id);
+        $query = Page::query()
+            ->where('tenant_id', $request->user()->tenant_id);
 
-        if ($request->has('store_id')) {
-            $query->where('store_id', $request->store_id);
+        if ($request->filled('store_id')) {
+            $query->where('store_id', $request->input('store_id'));
         }
 
         if ($request->has('is_published')) {
             $query->where('is_published', $request->boolean('is_published'));
         }
 
-        $pages = $query->orderBy('sort_order')
-            ->latest()
-            ->paginate($request->input('per_page', 15));
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('slug', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($request->filled('page_type') && Schema::hasColumn('ecommerce_pages', 'page_type')) {
+            $query->where('page_type', $request->input('page_type'));
+        }
+
+        $pages = $query->latest()->paginate($request->input('per_page', 15));
 
         return response()->json([
             'data' => $pages->items(),
@@ -45,12 +52,6 @@ class PageController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created page.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function store(Request $request): JsonResponse
     {
         $this->authorize('create', Page::class);
@@ -59,18 +60,23 @@ class PageController extends Controller
             'store_id' => ['required', 'exists:ecommerce_stores,id'],
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255'],
-            'content' => ['sometimes', 'array'],
-            'meta' => ['sometimes', 'array'],
+            'content' => ['nullable', 'array'],
+            'meta' => ['nullable', 'array'],
             'is_published' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer'],
+            'page_type' => ['sometimes', 'string'],
+            'nav_visible' => ['sometimes', 'boolean'],
+            'nav_order' => ['sometimes', 'integer'],
+            'draft_content' => ['nullable', 'array'],
+            'published_content' => ['nullable', 'array'],
         ]);
 
         $validated['tenant_id'] = $request->user()->tenant_id;
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
         $validated['is_published'] = $request->input('is_published', false);
-        $validated['sort_order'] = $request->input('sort_order', 0);
 
-        $page = Page::create($validated);
+        $data = $this->filterByExistingColumns($validated);
+        $page = Page::create($data);
 
         return response()->json([
             'message' => 'Page created successfully.',
@@ -78,53 +84,15 @@ class PageController extends Controller
         ], 201);
     }
 
-    /**
-     * Display the specified page.
-     *
-     * @param  \App\Modules\ECommerce\Models\Page  $page
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function show(Page $page): JsonResponse
     {
         $this->authorize('view', $page);
-
-        return response()->json([
-            'data' => $page->load('store'),
-        ]);
-    }
-
-    /**
-     * Get page by slug (public).
-     *
-     * @param  string  $storeSlug
-     * @param  string  $pageSlug
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getBySlug(string $storeSlug, string $pageSlug): JsonResponse
-    {
-        // Remove tenant scope for public storefront access
-        $store = \App\Modules\ECommerce\Models\Store::withoutGlobalScopes()
-            ->where('slug', $storeSlug)
-            ->where('is_active', true)
-            ->firstOrFail();
-
-        $page = Page::where('store_id', $store->id)
-            ->where('slug', $pageSlug)
-            ->where('is_published', true)
-            ->firstOrFail();
 
         return response()->json([
             'data' => $page,
         ]);
     }
 
-    /**
-     * Update the specified page.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Modules\ECommerce\Models\Page  $page
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function update(Request $request, Page $page): JsonResponse
     {
         $this->authorize('update', $page);
@@ -132,13 +100,19 @@ class PageController extends Controller
         $validated = $request->validate([
             'title' => ['sometimes', 'string', 'max:255'],
             'slug' => ['sometimes', 'string', 'max:255'],
-            'content' => ['sometimes', 'array'],
-            'meta' => ['sometimes', 'array'],
+            'content' => ['nullable', 'array'],
+            'meta' => ['nullable', 'array'],
             'is_published' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer'],
+            'page_type' => ['sometimes', 'string'],
+            'nav_visible' => ['sometimes', 'boolean'],
+            'nav_order' => ['sometimes', 'integer'],
+            'draft_content' => ['nullable', 'array'],
+            'published_content' => ['nullable', 'array'],
         ]);
 
-        $page->update($validated);
+        $data = $this->filterByExistingColumns($validated);
+        $page->update($data);
 
         return response()->json([
             'message' => 'Page updated successfully.',
@@ -146,12 +120,6 @@ class PageController extends Controller
         ]);
     }
 
-    /**
-     * Remove the specified page.
-     *
-     * @param  \App\Modules\ECommerce\Models\Page  $page
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function destroy(Page $page): JsonResponse
     {
         $this->authorize('delete', $page);
@@ -162,5 +130,150 @@ class PageController extends Controller
             'message' => 'Page deleted successfully.',
         ]);
     }
-}
 
+    public function getBySlug(Request $request, string $slug, string $pageSlug): JsonResponse
+    {
+        $store = Store::where('slug', $slug)->first();
+        if (!$store) {
+            return response()->json(['message' => 'Store not found.'], 404);
+        }
+
+        $query = Page::where('store_id', $store->id)
+            ->where('slug', $pageSlug)
+            ->where('is_published', true);
+
+        $page = $query->first();
+
+        if (!$page) {
+            return response()->json(['message' => 'Page not found.'], 404);
+        }
+
+        return response()->json([
+            'data' => $page,
+        ]);
+    }
+
+    public function getByTypeAdmin(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Page::class);
+
+        $request->validate([
+            'store_id' => ['required', 'exists:ecommerce_stores,id'],
+            'page_type' => ['required', 'string'],
+        ]);
+
+        $query = Page::where('store_id', $request->input('store_id'));
+
+        if (Schema::hasColumn('ecommerce_pages', 'page_type')) {
+            $query->where('page_type', $request->input('page_type'));
+        } else {
+            $query->where('slug', $request->input('page_type'));
+        }
+
+        $page = $query->first();
+
+        return response()->json([
+            'data' => $page,
+        ]);
+    }
+
+    public function templates(): JsonResponse
+    {
+        return response()->json([
+            'data' => [
+                [
+                    'template_slug' => 'home-default',
+                    'name' => 'Home - Default',
+                    'page_type' => 'home',
+                    'content' => [
+                        'blocks' => [
+                            ['type' => 'header', 'content' => [], 'settings' => []],
+                            [
+                                'type' => 'hero',
+                                'content' => [
+                                    'title' => 'Welcome to our store',
+                                    'subtitle' => 'Discover our best products.',
+                                    'buttonText' => 'Shop now',
+                                    'buttonLink' => '#',
+                                ],
+                                'settings' => ['padding' => '48px'],
+                            ],
+                            ['type' => 'products_grid', 'content' => ['title' => 'Featured Products'], 'settings' => []],
+                            ['type' => 'footer', 'content' => ['text' => '© All rights reserved.'], 'settings' => []],
+                        ],
+                    ],
+                ],
+                [
+                    'template_slug' => 'products-default',
+                    'name' => 'Products List - Default',
+                    'page_type' => 'products',
+                    'content' => [
+                        'blocks' => [
+                            ['type' => 'header', 'content' => [], 'settings' => []],
+                            ['type' => 'products_grid', 'content' => ['title' => 'Products'], 'settings' => []],
+                            ['type' => 'footer', 'content' => ['text' => '© All rights reserved.'], 'settings' => []],
+                        ],
+                    ],
+                ],
+                [
+                    'template_slug' => 'product-default',
+                    'name' => 'Product Details - Default',
+                    'page_type' => 'product',
+                    'content' => [
+                        'blocks' => [
+                            ['type' => 'header', 'content' => [], 'settings' => []],
+                            ['type' => 'text', 'content' => ['text' => '<p>Product details go here.</p>'], 'settings' => []],
+                            ['type' => 'footer', 'content' => ['text' => '© All rights reserved.'], 'settings' => []],
+                        ],
+                    ],
+                ],
+                [
+                    'template_slug' => 'cart-default',
+                    'name' => 'Cart - Default',
+                    'page_type' => 'cart',
+                    'content' => [
+                        'blocks' => [
+                            ['type' => 'header', 'content' => [], 'settings' => []],
+                            ['type' => 'text', 'content' => ['text' => '<p>Your cart items appear here.</p>'], 'settings' => []],
+                            ['type' => 'footer', 'content' => ['text' => '© All rights reserved.'], 'settings' => []],
+                        ],
+                    ],
+                ],
+                [
+                    'template_slug' => 'checkout-default',
+                    'name' => 'Checkout - Default',
+                    'page_type' => 'checkout',
+                    'content' => [
+                        'blocks' => [
+                            ['type' => 'header', 'content' => [], 'settings' => []],
+                            ['type' => 'text', 'content' => ['text' => '<p>Checkout details.</p>'], 'settings' => []],
+                            ['type' => 'footer', 'content' => ['text' => '© All rights reserved.'], 'settings' => []],
+                        ],
+                    ],
+                ],
+                [
+                    'template_slug' => 'account-default',
+                    'name' => 'Account - Default',
+                    'page_type' => 'account',
+                    'content' => [
+                        'blocks' => [
+                            ['type' => 'header', 'content' => [], 'settings' => []],
+                            ['type' => 'text', 'content' => ['text' => '<p>Account page.</p>'], 'settings' => []],
+                            ['type' => 'footer', 'content' => ['text' => '© All rights reserved.'], 'settings' => []],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    private function filterByExistingColumns(array $data): array
+    {
+        $columns = Schema::getColumnListing('ecommerce_pages');
+        return array_filter(
+            $data,
+            fn ($value, $key) => in_array($key, $columns, true),
+            ARRAY_FILTER_USE_BOTH
+        );
+    }
+}

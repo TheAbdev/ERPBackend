@@ -292,3 +292,14 @@ tail -f storage/logs/laravel.log | grep "Job"
 
 
 
+
+
+
+
+
+
+
+
+
+
+

@@ -125,6 +125,26 @@ class ProductController extends Controller
     {
         $this->authorize('update', $product);
 
+        if($product->type != 'stock' && $request->has('type')) {
+            if($request->type === 'stock') {
+                $store=Store::where('tenant_id', $request->user()->tenant_id)->first();
+                if($store) {
+                    $productSync=ProductSync::create([
+                        'tenant_id' => $request->user()->tenant_id,
+                        'product_id' => $product->id,
+                        'store_id' => $store->id,
+                        'is_synced' => true,
+                        'store_visibility' => true,
+                       // 'ecommerce_price' => $product->price,
+                       // 'ecommerce_images' => $product->images,
+                        'ecommerce_description' => $product->description,
+                        'sort_order' => 0,
+                    ]);
+                }
+            }
+        }
+
+
         $product->update($request->validated());
 
         // Dispatch entity updated event

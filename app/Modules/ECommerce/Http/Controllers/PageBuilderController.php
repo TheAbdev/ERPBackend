@@ -3,125 +3,50 @@
 namespace App\Modules\ECommerce\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\ECommerce\Models\Page;
 use App\Modules\ECommerce\Models\ContentBlock;
+use App\Modules\ECommerce\Models\Page;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class PageBuilderController extends Controller
 {
-    /**
-     * Get available content block types.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function getBlockTypes(): JsonResponse
     {
         return response()->json([
             'data' => [
-                [
-                    'type' => 'text',
-                    'name' => 'Text Block',
-                    'icon' => 'text',
-                    'description' => 'Add text content',
-                ],
-                [
-                    'type' => 'image',
-                    'name' => 'Image Block',
-                    'icon' => 'image',
-                    'description' => 'Add an image',
-                ],
-                [
-                    'type' => 'products_grid',
-                    'name' => 'Products Grid',
-                    'icon' => 'grid',
-                    'description' => 'Display products in a grid',
-                ],
-                [
-                    'type' => 'hero',
-                    'name' => 'Hero Section',
-                    'icon' => 'hero',
-                    'description' => 'Large banner section',
-                ],
-                [
-                    'type' => 'video',
-                    'name' => 'Video Block',
-                    'icon' => 'video',
-                    'description' => 'Embed a video',
-                ],
-                [
-                    'type' => 'html',
-                    'name' => 'HTML Block',
-                    'icon' => 'code',
-                    'description' => 'Custom HTML content',
-                ],
-                [
-                    'type' => 'form',
-                    'name' => 'Contact Form',
-                    'icon' => 'form',
-                    'description' => 'Contact form',
-                ],
+                ['type' => 'header', 'name' => 'Header', 'icon' => 'header', 'description' => 'Store header'],
+                ['type' => 'footer', 'name' => 'Footer', 'icon' => 'footer', 'description' => 'Store footer'],
+                ['type' => 'hero', 'name' => 'Hero', 'icon' => 'hero', 'description' => 'Hero section'],
+                ['type' => 'banner', 'name' => 'Banner', 'icon' => 'banner', 'description' => 'Promotional banner'],
+                ['type' => 'feature_grid', 'name' => 'Feature Grid', 'icon' => 'grid', 'description' => 'Feature list'],
+                ['type' => 'testimonial', 'name' => 'Testimonial', 'icon' => 'quote', 'description' => 'Testimonials'],
+                ['type' => 'promo_strip', 'name' => 'Promo Strip', 'icon' => 'promo', 'description' => 'Promo strip'],
+                ['type' => 'products_grid', 'name' => 'Products Grid', 'icon' => 'products', 'description' => 'Products grid'],
+                ['type' => 'text', 'name' => 'Text', 'icon' => 'text', 'description' => 'Text block'],
+                ['type' => 'image', 'name' => 'Image', 'icon' => 'image', 'description' => 'Image block'],
+                ['type' => 'button', 'name' => 'Button', 'icon' => 'button', 'description' => 'Button block'],
             ],
         ]);
     }
 
-    /**
-     * Save page content from page builder.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Modules\ECommerce\Models\Page  $page
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function savePageContent(Request $request, Page $page): JsonResponse
-    {
-        $this->authorize('update', $page);
-
-        $validated = $request->validate([
-            'content' => ['required', 'array'],
-        ]);
-
-        $page->content = $validated['content'];
-        $page->save();
-
-        return response()->json([
-            'message' => 'Page content saved successfully.',
-            'data' => $page,
-        ]);
-    }
-
-    /**
-     * Get reusable content blocks.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function getReusableBlocks(Request $request): JsonResponse
     {
         $this->authorize('viewAny', ContentBlock::class);
 
-        $query = ContentBlock::where('tenant_id', $request->user()->tenant_id)
+        $query = ContentBlock::query()
+            ->where('tenant_id', $request->user()->tenant_id)
             ->where('is_reusable', true);
 
-        if ($request->has('store_id')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('store_id', $request->store_id)
-                    ->orWhereNull('store_id');
-            });
+        if ($request->filled('store_id')) {
+            $query->where('store_id', $request->input('store_id'));
         }
 
-        $blocks = $query->latest()->get();
-
         return response()->json([
-            'data' => $blocks,
+            'data' => $query->latest()->get(),
         ]);
     }
 
-    /**
-     * Create reusable content block.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function createReusableBlock(Request $request): JsonResponse
     {
         $this->authorize('create', ContentBlock::class);
@@ -131,25 +56,68 @@ class PageBuilderController extends Controller
             'type' => ['required', 'string'],
             'name' => ['required', 'string', 'max:255'],
             'content' => ['required', 'array'],
-            'settings' => ['sometimes', 'array'],
+            'settings' => ['nullable', 'array'],
         ]);
 
-        $validated['tenant_id'] = $request->user()->tenant_id;
-        $validated['is_reusable'] = true;
-
-        $block = ContentBlock::create($validated);
+        $block = ContentBlock::create([
+            'tenant_id' => $request->user()->tenant_id,
+            'store_id' => $validated['store_id'] ?? null,
+            'type' => $validated['type'],
+            'name' => $validated['name'],
+            'content' => $validated['content'],
+            'settings' => $validated['settings'] ?? [],
+            'is_reusable' => true,
+        ]);
 
         return response()->json([
             'message' => 'Reusable block created successfully.',
             'data' => $block,
         ], 201);
     }
+
+    public function savePageContent(Request $request, Page $page): JsonResponse
+    {
+        $this->authorize('update', $page);
+
+        $validated = $request->validate([
+            'blocks' => ['required', 'array'],
+        ]);
+
+        if (Schema::hasColumn('ecommerce_pages', 'draft_content')) {
+            $page->draft_content = ['blocks' => $validated['blocks']];
+        } else {
+            $page->content = ['blocks' => $validated['blocks']];
+        }
+
+        $page->is_published = false;
+        $page->save();
+
+        return response()->json([
+            'message' => 'Page saved successfully.',
+            'data' => $page,
+        ]);
+    }
+
+    public function publishPageContent(Request $request, Page $page): JsonResponse
+    {
+        $this->authorize('update', $page);
+
+        $validated = $request->validate([
+            'blocks' => ['required', 'array'],
+        ]);
+
+        if (Schema::hasColumn('ecommerce_pages', 'published_content')) {
+            $page->published_content = ['blocks' => $validated['blocks']];
+        } else {
+            $page->content = ['blocks' => $validated['blocks']];
+        }
+
+        $page->is_published = true;
+        $page->save();
+
+        return response()->json([
+            'message' => 'Page published successfully.',
+            'data' => $page,
+        ]);
+    }
 }
-
-
-
-
-
-
-
-

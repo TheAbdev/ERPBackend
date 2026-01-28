@@ -27,6 +27,11 @@ class Page extends ECommerceBaseModel
         'meta',
         'is_published',
         'sort_order',
+        'page_type',
+        'nav_visible',
+        'nav_order',
+        'draft_content',
+        'published_content',
     ];
 
     /**
@@ -40,17 +45,12 @@ class Page extends ECommerceBaseModel
             'content' => 'array',
             'meta' => 'array',
             'is_published' => 'boolean',
+            'sort_order' => 'integer',
+            'nav_visible' => 'boolean',
+            'nav_order' => 'integer',
+            'draft_content' => 'array',
+            'published_content' => 'array',
         ];
-    }
-
-    /**
-     * Get the tenant that owns the page.
-     *
-     * @return BelongsTo
-     */
-    public function tenant(): BelongsTo
-    {
-        return $this->belongsTo(\App\Core\Models\Tenant::class);
     }
 
     /**
@@ -63,11 +63,3 @@ class Page extends ECommerceBaseModel
         return $this->belongsTo(Store::class);
     }
 }
-
-
-
-
-
-
-
-

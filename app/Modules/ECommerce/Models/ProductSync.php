@@ -49,6 +49,7 @@ class ProductSync extends ECommerceBaseModel
             'is_synced' => 'boolean',
             'store_visibility' => 'boolean',
             'ecommerce_price' => 'decimal:2',
+            'ecommerce_images' => 'string',
         ];
     }
 

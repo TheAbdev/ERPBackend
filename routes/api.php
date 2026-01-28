@@ -16,8 +16,10 @@ Route::prefix('storefront')->group(function () {
     Route::get('/{slug}', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getStore']);
     Route::get('/{slug}/products', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getProducts']);
     Route::get('/{slug}/products/{productId}', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getProduct']);
+    Route::get('/{slug}/layout', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getLayout']);
+    Route::get('/{slug}/nav-pages', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getNavPages']);
+    Route::get('/{slug}/pages/type/{pageType}', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getPageByType']);
     Route::get('/{slug}/pages/{pageSlug}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'getBySlug']);
-        Route::get('/{slug}/layout', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'getPublicLayout']);
 
     // Cart
     Route::prefix('{slug}/cart')->group(function () {
@@ -32,6 +34,8 @@ Route::prefix('storefront')->group(function () {
     Route::post('/{slug}/orders', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'createFromCart']);
     Route::get('/{slug}/orders/{orderId}', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'getPublicOrder']);
     Route::post('/{slug}/orders/{orderId}/payment', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'processPayment']);
+
+    Route::get('/{slug}/{pageSlug}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'getBySlug']);
 });
 
 // Protected routes (require authentication and tenant access)
@@ -536,7 +540,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
 
     Route::prefix('erp/dashboard')->middleware(['tenant.rate_limit:60,1'])->group(function () {
         Route::get('/metrics', [\App\Modules\ERP\Http\Controllers\DashboardController::class, 'metrics']);
-        Route::get('/personal-metrics', [\App\Modules\ERP\Http\Controllers\DashboardController::class, 'personalMetrics']);
         Route::get('/recent-activities', [\App\Modules\ERP\Http\Controllers\DashboardController::class, 'recentActivities']);
         Route::get('/module-summary', [\App\Modules\ERP\Http\Controllers\DashboardController::class, 'moduleSummary']);
     });
@@ -642,8 +645,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
             Route::get('/{store}', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'show']);
             Route::put('/{store}', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'update']);
             Route::delete('/{store}', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'destroy']);
-            Route::get('/{store}/layout', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'getLayout']);
-            Route::put('/{store}/layout', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'updateLayout']);
         });
 
         // Themes
@@ -667,6 +668,8 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         // Pages
         Route::prefix('pages')->group(function () {
             Route::get('/', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'index']);
+            Route::get('/templates', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'templates']);
+            Route::get('/by-type', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'getByTypeAdmin']);
             Route::post('/', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'store']);
             Route::get('/{page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'show']);
             Route::put('/{page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'update']);
@@ -679,6 +682,16 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
             Route::get('/reusable-blocks', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'getReusableBlocks']);
             Route::post('/reusable-blocks', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'createReusableBlock']);
             Route::post('/pages/{page}/content', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'savePageContent']);
+            Route::post('/{page}/save', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'savePageContent']);
+            Route::post('/{page}/publish', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'publishPageContent']);
+        });
+
+        // Storefront Layouts
+        Route::prefix('storefront-layouts')->group(function () {
+            Route::get('/', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'index']);
+            Route::get('/by-store/{store}', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'getByStore']);
+            Route::post('/by-store/{store}', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'saveByStore']);
+            Route::post('/by-store/{store}/publish', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'publishByStore']);
         });
 
         // Product Sync

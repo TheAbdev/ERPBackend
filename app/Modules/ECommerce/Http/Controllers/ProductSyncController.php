@@ -9,6 +9,8 @@ use App\Modules\ECommerce\Services\ProductSyncService;
 use App\Modules\ERP\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProductSyncController extends Controller
 {
@@ -74,7 +76,7 @@ class ProductSyncController extends Controller
             'store_id' => ['required', 'exists:ecommerce_stores,id'],
             'store_visibility' => ['sometimes', 'boolean'],
             'ecommerce_price' => ['nullable', 'numeric'],
-            'ecommerce_images' => ['sometimes', 'string', 'nullable'],
+            'ecommerce_images' => ['nullable'],
             'ecommerce_description' => ['nullable', 'string'],
         ]);
 
@@ -87,10 +89,34 @@ class ProductSyncController extends Controller
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
+        if ($request->hasFile('ecommerce_images')) {
+            $request->validate([
+                'ecommerce_images' => ['image', 'mimes:jpeg,jpg,png,gif,webp', 'max:5120'],
+            ]);
+
+            $file = $request->file('ecommerce_images');
+            $tenantId = $request->user()->tenant_id;
+            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+            $disk = Storage::disk('public');
+            $storedPath = $disk->putFileAs(
+                "ecommerce/products/{$tenantId}",
+                $file,
+                $filename
+            );
+            $image = $disk->url($storedPath);
+            $image = str_replace('http://127.0.0.1:8000', 'http://localhost', $image);
+        } else {
+            $request->validate([
+                'ecommerce_images' => ['sometimes', 'string', 'nullable', 'url'],
+            ]);
+            $image = $validated['ecommerce_images'] ?? null;
+        }
+
         $sync = $this->productSyncService->syncProduct($product, $store, [
             'store_visibility' => $validated['store_visibility'] ?? true,
             'ecommerce_price' => $validated['ecommerce_price'] ?? null,
-            'ecommerce_images' => $validated['ecommerce_images'] ?? null,
+            'ecommerce_images' => $image,
             'ecommerce_description' => $validated['ecommerce_description'] ?? null,
         ]);
 

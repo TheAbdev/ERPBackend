@@ -26,19 +26,20 @@ class FileUploadController extends Controller
 
         $file = $request->file('image');
         $tenantId = $request->user()->tenant_id;
-        
+
         // Generate unique filename
         $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        
+
         // Store file
         $storedPath = Storage::disk('public')->putFileAs(
             "ecommerce/products/{$tenantId}",
             $file,
             $filename
         );
-        
+
         // Get public URL
         $url = Storage::disk('public')->url($storedPath);
+        $url = str_replace('http://127.0.0.1:8000', 'http://localhost', $url);
 
         return response()->json([
             'message' => 'Image uploaded successfully.',

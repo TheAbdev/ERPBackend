@@ -3,178 +3,175 @@
 namespace App\Modules\ECommerce\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\ECommerce\Models\Store;
+use App\Modules\ECommerce\Models\Page;
 use App\Modules\ECommerce\Models\ProductSync;
-use App\Modules\ERP\Models\Product;
+use App\Modules\ECommerce\Models\Store;
+use App\Modules\ECommerce\Models\StorefrontLayout;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class StorefrontController extends Controller
 {
-    /**
-     * Get store information (public).
-     *
-     * @param  string  $slug
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function getStore(string $slug): JsonResponse
     {
-        // Remove tenant scope for public storefront access
-        $store = Store::withoutGlobalScopes()
-            ->where('slug', $slug)
-            ->where('is_active', true)
-            ->with(['theme'])
-            ->firstOrFail();
+        $store = Store::with('theme')->where('slug', $slug)->first();
+
+        if (!$store) {
+            return response()->json(['message' => 'Store not found.'], 404);
+        }
 
         return response()->json([
-            'data' => [
-                'id' => $store->id,
-                'name' => $store->name,
-                'slug' => $store->slug,
-                'description' => $store->description,
-                'logo' => $store->logo,
-                'favicon' => $store->favicon,
-                'settings' => $store->settings,
-                'theme' => $store->theme,
-            ],
+            'data' => $store,
         ]);
     }
 
-    /**
-     * Get products for storefront (public).
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  string  $slug
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function getProducts(Request $request, string $slug): JsonResponse
     {
-        // Remove tenant scope for public storefront access
-        $store = Store::withoutGlobalScopes()
-            ->where('slug', $slug)
-            ->where('is_active', true)
-            ->firstOrFail();
+        $store = Store::where('slug', $slug)->first();
+        if (!$store) {
+            return response()->json(['message' => 'Store not found.'], 404);
+        }
 
-        $query = ProductSync::withoutGlobalScopes()
+        $query = ProductSync::with('product')
             ->where('store_id', $store->id)
-            ->where('store_visibility', true)
-            ->where('is_synced', true)
-            ->with(['product.category', 'product.stockItems']);
+            ->where('is_synced', true);
 
-        // Filter by category
-        if ($request->has('category_id')) {
-            $query->whereHas('product', function ($q) use ($request) {
-                $q->where('category_id', $request->category_id);
-            });
+        if (Schema::hasColumn('ecommerce_product_sync', 'store_visibility')) {
+            $query->where('store_visibility', true);
         }
 
-        // Search
-        if ($request->has('search')) {
-            $search = $request->search;
+        if ($request->filled('search')) {
+            $search = $request->input('search');
             $query->whereHas('product', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+                $q->where('name', 'like', '%' . $search . '%');
             });
         }
 
-        $productSyncs = $query->orderBy('sort_order')
-            ->orderBy('created_at', 'desc')
-            ->paginate($request->input('per_page', 20));
+        $products = $query->paginate($request->input('per_page', 15));
 
-        $products = $productSyncs->map(function ($sync) {
+        $data = $products->getCollection()->map(function (ProductSync $sync) {
             $product = $sync->product;
-            
-            // Get price: prioritize ecommerce_price, fallback to 0
-            // Note: In a full implementation, you might want to get price from a pricing table
-            $price = $sync->ecommerce_price !== null && $sync->ecommerce_price !== '' 
-                ? (float) $sync->ecommerce_price 
-                : 0;
+            $image = $sync->ecommerce_images;
+            $images = $image ? [$image] : [];
             
             return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'sku' => $product->sku,
-                'description' => $sync->ecommerce_description ?? $product->description,
-                'price' => $price,
-                'images' => $sync->ecommerce_images ? [$sync->ecommerce_images] : [],
-                'category' => $product->category ? [
-                    'id' => $product->category->id,
-                    'name' => $product->category->name,
-                ] : null,
+                'id' => $product?->id ?? $sync->product_id,
+                'name' => $product?->name ?? 'Product',
+                'description' => $sync->ecommerce_description ?? $product?->description,
+                'price' => $sync->ecommerce_price ?? $product?->price ?? 0,
+                'images' => $images,
                 'stock' => [
-                    'available' => $product->quantity ?? 0,
-                    'on_hand' => $product->quantity ?? 0,
+                    'available' => $product?->quantity ?? 0,
                 ],
             ];
         });
 
         return response()->json([
-            'data' => $products,
+            'data' => $data,
             'meta' => [
-                'current_page' => $productSyncs->currentPage(),
-                'per_page' => $productSyncs->perPage(),
-                'total' => $productSyncs->total(),
-                'last_page' => $productSyncs->lastPage(),
+                'current_page' => $products->currentPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+                'last_page' => $products->lastPage(),
             ],
         ]);
     }
 
-    /**
-     * Get single product for storefront (public).
-     *
-     * @param  string  $storeSlug
-     * @param  int  $productId
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getProduct(string $storeSlug, int $productId): JsonResponse
+    public function getProduct(string $slug, string $productId): JsonResponse
     {
-        // Remove tenant scope for public storefront access
-        $store = Store::withoutGlobalScopes()
-            ->where('slug', $storeSlug)
-            ->where('is_active', true)
-            ->firstOrFail();
+        $store = Store::where('slug', $slug)->first();
+        if (!$store) {
+            return response()->json(['message' => 'Store not found.'], 404);
+        }
 
-        $sync = ProductSync::withoutGlobalScopes()
+        $sync = ProductSync::with('product')
             ->where('store_id', $store->id)
             ->where('product_id', $productId)
-            ->where('store_visibility', true)
-            ->where('is_synced', true)
-            ->with(['product.category', 'product.variants', 'product.stockItems'])
-            ->firstOrFail();
+            ->first();
 
-        $product = $sync->product;
+        if (!$sync || !$sync->product) {
+            return response()->json(['message' => 'Product not found.'], 404);
+        }
 
-        // Get price: prioritize ecommerce_price, fallback to 0
-        $price = $sync->ecommerce_price !== null && $sync->ecommerce_price !== '' 
-            ? (float) $sync->ecommerce_price 
-            : 0;
+        $image = $sync->ecommerce_images;
+        $images = $image ? [$image] : [];
         
         return response()->json([
             'data' => [
-                'id' => $product->id,
-                'name' => $product->name,
-                'sku' => $product->sku,
-                'description' => $sync->ecommerce_description ?? $product->description,
-                'price' => $price,
-                'images' => $sync->ecommerce_images ? [$sync->ecommerce_images] : [],
-                'category' => $product->category ? [
-                    'id' => $product->category->id,
-                    'name' => $product->category->name,
-                ] : null,
-                'variants' => $product->variants->map(function ($variant) {
-                    return [
-                        'id' => $variant->id,
-                        'name' => $variant->name,
-                        'sku' => $variant->sku,
-                    ];
-                }),
+                'id' => $sync->product->id,
+                'name' => $sync->product->name,
+                'description' => $sync->ecommerce_description ?? $sync->product->description,
+                'price' => $sync->ecommerce_price ?? $sync->product->price ?? 0,
+                'images' => $images,
                 'stock' => [
-                    'available' => $product->quantity ?? 0,
-                    'on_hand' => $product->quantity ?? 0,
+                    'available' => $sync->product->quantity ?? 0,
                 ],
             ],
         ]);
     }
-}
 
+    public function getLayout(string $slug): JsonResponse
+    {
+        $store = Store::where('slug', $slug)->first();
+        if (!$store) {
+            return response()->json(['message' => 'Store not found.'], 404);
+        }
+
+        $layout = StorefrontLayout::where('store_id', $store->id)
+            ->where('is_published', true)
+            ->first();
+
+        return response()->json([
+            'data' => $layout,
+        ]);
+    }
+
+    public function getNavPages(string $slug): JsonResponse
+    {
+        $store = Store::where('slug', $slug)->first();
+        if (!$store) {
+            return response()->json(['message' => 'Store not found.'], 404);
+        }
+
+        $query = Page::where('store_id', $store->id)
+            ->where('is_published', true);
+
+        if (Schema::hasColumn('ecommerce_pages', 'nav_visible')) {
+            $query->where('nav_visible', true);
+        }
+
+        if (Schema::hasColumn('ecommerce_pages', 'page_type')) {
+            $query->where('page_type', 'custom');
+        }
+
+        $pages = $query->orderBy('nav_order')->get(['id', 'title', 'slug', 'nav_order']);
+
+        return response()->json([
+            'data' => $pages,
+        ]);
+    }
+
+    public function getPageByType(string $slug, string $pageType): JsonResponse
+    {
+        $store = Store::where('slug', $slug)->first();
+        if (!$store) {
+            return response()->json(['message' => 'Store not found.'], 404);
+        }
+
+        $query = Page::where('store_id', $store->id)
+            ->where('is_published', true);
+
+        if (Schema::hasColumn('ecommerce_pages', 'page_type')) {
+            $query->where('page_type', $pageType);
+        } else {
+            $query->where('slug', $pageType);
+        }
+
+        $page = $query->first();
+
+        return response()->json([
+            'data' => $page,
+        ]);
+    }
+}
