@@ -41,7 +41,29 @@ class StoreController extends Controller
     }
 
     /**
+     * Get the single store for the current tenant.
+     * Each tenant can only have one store.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function myStore(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Store::class);
+
+        $store = Store::with(['theme'])
+            ->where('tenant_id', $request->user()->tenant_id)
+            ->first();
+
+        return response()->json([
+            'data' => $store,
+            'has_store' => $store !== null,
+        ]);
+    }
+
+    /**
      * Store a newly created store.
+     * Each tenant can only have one store.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -49,6 +71,15 @@ class StoreController extends Controller
     public function store(Request $request): JsonResponse
     {
         $this->authorize('create', Store::class);
+
+        // Check if tenant already has a store
+        $existingStore = Store::where('tenant_id', $request->user()->tenant_id)->first();
+        if ($existingStore) {
+            return response()->json([
+                'message' => 'Your tenant already has a store. Each tenant can only have one store.',
+                'data' => $existingStore->load('theme'),
+            ], 422);
+        }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],

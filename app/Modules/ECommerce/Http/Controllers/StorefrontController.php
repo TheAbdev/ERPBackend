@@ -7,6 +7,7 @@ use App\Modules\ECommerce\Models\Page;
 use App\Modules\ECommerce\Models\ProductSync;
 use App\Modules\ECommerce\Models\Store;
 use App\Modules\ECommerce\Models\StorefrontLayout;
+use App\Modules\ECommerce\Models\ThemePage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -15,7 +16,7 @@ class StorefrontController extends Controller
 {
     public function getStore(string $slug): JsonResponse
     {
-        $store = Store::with('theme')->where('slug', $slug)->first();
+        $store = Store::with(['theme', 'theme.pages'])->where('slug', $slug)->first();
 
         if (!$store) {
             return response()->json(['message' => 'Store not found.'], 404);
@@ -46,6 +47,31 @@ class StorefrontController extends Controller
             $query->whereHas('product', function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%');
             });
+        }
+
+        // Sorting
+        $sort = $request->input('sort', 'newest');
+        switch ($sort) {
+            case 'price_asc':
+                $query->orderByRaw('COALESCE(ecommerce_price, 0) ASC');
+                break;
+            case 'price_desc':
+                $query->orderByRaw('COALESCE(ecommerce_price, 0) DESC');
+                break;
+            case 'name_asc':
+                $query->join('products', 'ecommerce_product_sync.product_id', '=', 'products.id')
+                    ->orderBy('products.name', 'ASC')
+                    ->select('ecommerce_product_sync.*');
+                break;
+            case 'name_desc':
+                $query->join('products', 'ecommerce_product_sync.product_id', '=', 'products.id')
+                    ->orderBy('products.name', 'DESC')
+                    ->select('ecommerce_product_sync.*');
+                break;
+            case 'newest':
+            default:
+                $query->orderBy('created_at', 'DESC');
+                break;
         }
 
         $products = $query->paginate($request->input('per_page', 15));
@@ -134,6 +160,7 @@ class StorefrontController extends Controller
             return response()->json(['message' => 'Store not found.'], 404);
         }
 
+        // Get custom pages (from Pages table, not theme pages)
         $query = Page::where('store_id', $store->id)
             ->where('is_published', true);
 
@@ -152,13 +179,44 @@ class StorefrontController extends Controller
         ]);
     }
 
+    /**
+     * Get a page by type.
+     * First checks theme pages, then falls back to store pages.
+     */
     public function getPageByType(string $slug, string $pageType): JsonResponse
     {
-        $store = Store::where('slug', $slug)->first();
+        $store = Store::with('theme')->where('slug', $slug)->first();
         if (!$store) {
             return response()->json(['message' => 'Store not found.'], 404);
         }
 
+        // Standard page types that come from theme pages
+        $themePageTypes = ['home', 'products', 'product', 'cart', 'checkout', 'account'];
+
+        // If the store has a theme and the page type is a standard type, get from theme pages
+        if ($store->theme_id && in_array($pageType, $themePageTypes)) {
+            $themePage = ThemePage::where('theme_id', $store->theme_id)
+                ->where('page_type', $pageType)
+                ->where('is_published', true)
+                ->first();
+
+            if ($themePage) {
+                return response()->json([
+                    'data' => [
+                        'id' => $themePage->id,
+                        'title' => $themePage->title,
+                        'slug' => $themePage->page_type,
+                        'page_type' => $themePage->page_type,
+                        'content' => $themePage->content,
+                        'is_published' => $themePage->is_published,
+                        'published_at' => $themePage->published_at,
+                        'source' => 'theme',
+                    ],
+                ]);
+            }
+        }
+
+        // Fallback to store pages (for custom pages or if theme page not found)
         $query = Page::where('store_id', $store->id)
             ->where('is_published', true);
 
@@ -170,8 +228,42 @@ class StorefrontController extends Controller
 
         $page = $query->first();
 
+        if ($page) {
+            $pageData = $page->toArray();
+            $pageData['source'] = 'store';
+            return response()->json([
+                'data' => $pageData,
+            ]);
+        }
+
+        // If no page found anywhere, return null
         return response()->json([
-            'data' => $page,
+            'data' => null,
+        ]);
+    }
+
+    /**
+     * Get theme configuration for the store.
+     */
+    public function getThemeConfig(string $slug): JsonResponse
+    {
+        $store = Store::with('theme')->where('slug', $slug)->first();
+        if (!$store) {
+            return response()->json(['message' => 'Store not found.'], 404);
+        }
+
+        if (!$store->theme) {
+            return response()->json([
+                'data' => null,
+            ]);
+        }
+
+        return response()->json([
+            'data' => [
+                'id' => $store->theme->id,
+                'name' => $store->theme->name,
+                'config' => $store->theme->config,
+            ],
         ]);
     }
 }

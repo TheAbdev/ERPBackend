@@ -2,6 +2,8 @@
 
 namespace App\Modules\ECommerce\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 class Theme extends ECommerceBaseModel
 {
     /**
@@ -26,6 +28,7 @@ class Theme extends ECommerceBaseModel
         'config',
         'assets',
         'preview_image',
+        'source_template',
     ];
 
     /**
@@ -41,5 +44,26 @@ class Theme extends ECommerceBaseModel
             'config' => 'array',
             'assets' => 'array',
         ];
+    }
+
+    /**
+     * Get the pages for this theme.
+     *
+     * @return HasMany
+     */
+    public function pages(): HasMany
+    {
+        return $this->hasMany(ThemePage::class);
+    }
+
+    /**
+     * Get a specific page by type.
+     *
+     * @param string $pageType
+     * @return ThemePage|null
+     */
+    public function getPage(string $pageType): ?ThemePage
+    {
+        return $this->pages()->where('page_type', $pageType)->first();
     }
 }

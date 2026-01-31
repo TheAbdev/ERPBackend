@@ -3,25 +3,25 @@
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 
-// Public auth routes
-// Login doesn't require tenant.resolve middleware because Site Owner can login without tenant
+
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
-// E-Commerce - Public Storefront Routes (No authentication required)
+
 Route::prefix('storefront')->group(function () {
     Route::get('/{slug}', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getStore']);
     Route::get('/{slug}/products', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getProducts']);
     Route::get('/{slug}/products/{productId}', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getProduct']);
     Route::get('/{slug}/layout', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getLayout']);
+    Route::get('/{slug}/theme-config', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getThemeConfig']);
     Route::get('/{slug}/nav-pages', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getNavPages']);
     Route::get('/{slug}/pages/type/{pageType}', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getPageByType']);
     Route::get('/{slug}/pages/{pageSlug}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'getBySlug']);
 
-    // Cart
+
     Route::prefix('{slug}/cart')->group(function () {
         Route::get('/', [\App\Modules\ECommerce\Http\Controllers\CartController::class, 'getCart']);
         Route::post('/items', [\App\Modules\ECommerce\Http\Controllers\CartController::class, 'addItem']);
@@ -29,7 +29,7 @@ Route::prefix('storefront')->group(function () {
         Route::delete('/items/{itemIndex}', [\App\Modules\ECommerce\Http\Controllers\CartController::class, 'removeItem']);
     });
 
-    // Orders
+
     Route::get('/{slug}/orders', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'listPublicOrders']);
     Route::post('/{slug}/orders', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'createFromCart']);
     Route::get('/{slug}/orders/{orderId}', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'getPublicOrder']);
@@ -38,14 +38,14 @@ Route::prefix('storefront')->group(function () {
     Route::get('/{slug}/{pageSlug}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'getBySlug']);
 });
 
-// Protected routes (require authentication and tenant access)
+
 Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
     });
 
-    // 2FA Routes
+
     Route::prefix('auth/2fa')->group(function () {
         Route::get('/status', [\App\Core\Http\Controllers\TwoFactorAuthController::class, 'status']);
         Route::post('/enable', [\App\Core\Http\Controllers\TwoFactorAuthController::class, 'enable']);
@@ -54,13 +54,12 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::post('/regenerate-recovery-codes', [\App\Core\Http\Controllers\TwoFactorAuthController::class, 'regenerateRecoveryCodes']);
     });
 
-    // Login History
+
     Route::prefix('login-history')->group(function () {
         Route::get('/', [\App\Core\Http\Controllers\LoginHistoryController::class, 'index']);
         Route::get('/all', [\App\Core\Http\Controllers\LoginHistoryController::class, 'all']);
     });
 
-    // Custom Fields
     Route::prefix('custom-fields')->group(function () {
         Route::get('/', [\App\Core\Http\Controllers\CustomFieldController::class, 'index']);
         Route::post('/', [\App\Core\Http\Controllers\CustomFieldController::class, 'store']);
@@ -69,7 +68,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::delete('/{customField}', [\App\Core\Http\Controllers\CustomFieldController::class, 'destroy']);
     });
 
-    // Tags
     Route::prefix('tags')->group(function () {
         Route::get('/', [\App\Core\Http\Controllers\TagController::class, 'index']);
         Route::post('/', [\App\Core\Http\Controllers\TagController::class, 'store']);
@@ -78,7 +76,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::delete('/{tag}', [\App\Core\Http\Controllers\TagController::class, 'destroy']);
     });
 
-    // Users
     Route::prefix('users')->group(function () {
         Route::get('/', [\App\Core\Http\Controllers\UserController::class, 'index']);
         Route::post('/', [\App\Core\Http\Controllers\UserController::class, 'store']);
@@ -91,7 +88,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::post('/{user}/deactivate', [\App\Core\Http\Controllers\UserController::class, 'deactivate']);
     });
 
-    // Roles
     Route::prefix('roles')->group(function () {
         Route::get('/', [\App\Core\Http\Controllers\RoleController::class, 'index']);
         Route::post('/', [\App\Core\Http\Controllers\RoleController::class, 'store']);
@@ -104,12 +100,10 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::post('/{role}/permissions/sync', [\App\Core\Http\Controllers\RoleController::class, 'syncPermissions']);
     });
 
-    // Permissions
     Route::prefix('permissions')->group(function () {
         Route::get('/', [\App\Core\Http\Controllers\PermissionController::class, 'index']);
     });
 
-    // Teams
     Route::prefix('teams')->group(function () {
         Route::get('/', [\App\Core\Http\Controllers\TeamController::class, 'index']);
         Route::post('/', [\App\Core\Http\Controllers\TeamController::class, 'store']);
@@ -120,7 +114,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::post('/{team}/users/detach', [\App\Core\Http\Controllers\TeamController::class, 'detachUsers']);
     });
 
-    // CRM Routes
     Route::prefix('crm/leads')->group(function () {
         Route::get('/', [\App\Modules\CRM\Http\Controllers\LeadController::class, 'index']);
         Route::post('/', [\App\Modules\CRM\Http\Controllers\LeadController::class, 'store']);
@@ -221,7 +214,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::delete('/{noteAttachment}', [\App\Modules\CRM\Http\Controllers\NoteAttachmentController::class, 'destroy']);
     });
 
-    // CRM Reports
     Route::prefix('crm/reports')->group(function () {
         Route::get('/leads', [\App\Modules\CRM\Http\Controllers\ReportsController::class, 'leads']);
         Route::get('/deals', [\App\Modules\CRM\Http\Controllers\ReportsController::class, 'deals']);
@@ -229,7 +221,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::get('/sales-performance', [\App\Modules\CRM\Http\Controllers\ReportsController::class, 'salesPerformance']);
     });
 
-    // CRM Workflows
     Route::prefix('crm/workflows')->group(function () {
         Route::get('/', [\App\Modules\CRM\Http\Controllers\WorkflowController::class, 'index']);
         Route::post('/', [\App\Modules\CRM\Http\Controllers\WorkflowController::class, 'store']);
@@ -239,7 +230,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::delete('/{workflow}', [\App\Modules\CRM\Http\Controllers\WorkflowController::class, 'destroy']);
     });
 
-    // CRM Import/Export
     Route::prefix('crm/imports')->group(function () {
         Route::get('/', [\App\Modules\CRM\Http\Controllers\ImportController::class, 'index']);
         Route::post('/', [\App\Modules\CRM\Http\Controllers\ImportController::class, 'store']);
@@ -253,7 +243,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
             ->name('api.crm.exports.download');
     });
 
-    // Calendar Integration
     Route::prefix('crm/calendar/google')->group(function () {
         Route::get('/connect', [\App\Modules\CRM\Http\Controllers\GoogleCalendarController::class, 'connect']);
         Route::get('/callback', [\App\Modules\CRM\Http\Controllers\GoogleCalendarController::class, 'callback']);
@@ -269,7 +258,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::delete('/disconnect/{calendarConnection}', [\App\Modules\CRM\Http\Controllers\OutlookCalendarController::class, 'disconnect']);
     });
 
-    // Email Integration
     Route::prefix('crm/email-accounts')->group(function () {
         Route::get('/', [\App\Modules\CRM\Http\Controllers\EmailAccountController::class, 'index']);
         Route::post('/', [\App\Modules\CRM\Http\Controllers\EmailAccountController::class, 'store']);
@@ -295,7 +283,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::post('/{emailCampaign}/send', [\App\Modules\CRM\Http\Controllers\EmailCampaignController::class, 'send']);
     });
 
-    // Email Tracking (public routes - no auth required for tracking)
     Route::prefix('crm/email-tracking')->group(function () {
         Route::get('/{token}/open', [\App\Modules\CRM\Http\Controllers\EmailTrackingController::class, 'trackOpen'])
             ->name('api.crm.email-tracking.open');
@@ -303,14 +290,12 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
             ->name('api.crm.email-tracking.click');
     });
 
-    // Notifications
     Route::prefix('notifications')->group(function () {
         Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index']);
         Route::post('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markRead']);
         Route::post('/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead']);
     });
 
-    // System Health Checks
     Route::prefix('health')->group(function () {
         Route::get('/', [\App\Http\Controllers\HealthCheckController::class, 'index']);
         Route::get('/database', [\App\Http\Controllers\HealthCheckController::class, 'database']);
@@ -319,7 +304,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::get('/storage', [\App\Http\Controllers\HealthCheckController::class, 'storage']);
     });
 
-    // Audit Logs
     Route::prefix('audit-logs')->middleware(['tenant.rate_limit:100,1'])->group(function () {
         Route::get('/', [\App\Http\Controllers\AuditLogController::class, 'index']);
         Route::get('/model-timeline', [\App\Http\Controllers\AuditLogController::class, 'modelTimeline']);
@@ -329,14 +313,12 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
 
     });
 
-    // Queue Monitoring
     Route::prefix('queue')->middleware(['tenant.rate_limit:60,1'])->group(function () {
         Route::get('/statistics', [\App\Http\Controllers\QueueMonitoringController::class, 'statistics']);
         Route::get('/failed-jobs', [\App\Http\Controllers\QueueMonitoringController::class, 'failedJobs']);
         Route::get('/metrics', [\App\Http\Controllers\QueueMonitoringController::class, 'metrics']);
     });
 
-    // ERP Routes
     Route::prefix('erp/products')->group(function () {
         Route::get('/', [\App\Modules\ERP\Http\Controllers\ProductController::class, 'index']);
         Route::post('/', [\App\Modules\ERP\Http\Controllers\ProductController::class, 'store']);
@@ -522,14 +504,13 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::post('/{journalEntry}/post', [\App\Modules\ERP\Http\Controllers\JournalEntryController::class, 'post']);
     });
 
-    // ERP Reports & Dashboards
     Route::prefix('erp/reports')->middleware(['tenant.rate_limit:60,1'])->group(function () {
         Route::get('/', [\App\Modules\ERP\Http\Controllers\ReportController::class, 'index']);
         Route::get('/{report}', [\App\Modules\ERP\Http\Controllers\ReportController::class, 'show']);
         Route::get('/{report}/export', [\App\Modules\ERP\Http\Controllers\ReportController::class, 'export']);
     });
 
-    // Financial Reports
+
     Route::prefix('erp/financial-reports')->middleware(['tenant.rate_limit:60,1'])->group(function () {
         Route::get('/trial-balance', [\App\Modules\ERP\Http\Controllers\FinancialReportController::class, 'trialBalance']);
         Route::get('/general-ledger', [\App\Modules\ERP\Http\Controllers\FinancialReportController::class, 'generalLedger']);
@@ -553,13 +534,13 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::delete('/{key}', [\App\Modules\ERP\Http\Controllers\SystemSettingsController::class, 'destroy']);
     });
 
-    // ERP System Health
+
     Route::prefix('erp/system-health')->middleware(['tenant.rate_limit:10,1'])->group(function () {
         Route::get('/', [\App\Modules\ERP\Http\Controllers\SystemHealthController::class, 'index']);
         Route::post('/check', [\App\Modules\ERP\Http\Controllers\SystemHealthController::class, 'check']);
     });
 
-    // Tenant Settings (Tenant Owner only)
+
     Route::prefix('tenant/settings')->middleware(['tenant.rate_limit:30,1'])->group(function () {
         Route::get('/', [\App\Tenant\Http\Controllers\TenantSettingsController::class, 'index']);
         Route::put('/', [\App\Tenant\Http\Controllers\TenantSettingsController::class, 'update']);
@@ -573,7 +554,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::put('/security', [\App\Tenant\Http\Controllers\TenantSettingsController::class, 'updateSecurity']);
     });
 
-    // ERP Notifications (if not already added)
     Route::prefix('erp/notifications')->middleware(['tenant.rate_limit:60,1'])->group(function () {
         Route::get('/', [\App\Modules\ERP\Http\Controllers\NotificationController::class, 'index']);
         Route::post('/{notification}/mark-read', [\App\Modules\ERP\Http\Controllers\NotificationController::class, 'markRead']);
@@ -581,7 +561,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::get('/unread-count', [\App\Modules\ERP\Http\Controllers\NotificationController::class, 'unreadCount']);
     });
 
-    // ERP Webhooks
     Route::prefix('erp/webhooks')->middleware(['tenant.rate_limit:30,1'])->group(function () {
         Route::get('/', [\App\Modules\ERP\Http\Controllers\WebhookController::class, 'index']);
         Route::post('/', [\App\Modules\ERP\Http\Controllers\WebhookController::class, 'store']);
@@ -590,13 +569,12 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::delete('/{webhook}', [\App\Modules\ERP\Http\Controllers\WebhookController::class, 'destroy']);
     });
 
-    // ERP Activity Feed
     Route::prefix('erp/activity-feed')->middleware(['tenant.rate_limit:60,1'])->group(function () {
         Route::get('/', [\App\Modules\ERP\Http\Controllers\ActivityFeedController::class, 'index']);
         Route::get('/entity/{entityType}/{entityId}', [\App\Modules\ERP\Http\Controllers\ActivityFeedController::class, 'entity']);
     });
 
-    // Payment Gateways
+
     Route::prefix('erp/payment-gateways')->group(function () {
         Route::get('/', [\App\Modules\ERP\Http\Controllers\PaymentGatewayController::class, 'index']);
         Route::post('/', [\App\Modules\ERP\Http\Controllers\PaymentGatewayController::class, 'store']);
@@ -607,13 +585,11 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::post('/{paymentGateway}/process-payment', [\App\Modules\ERP\Http\Controllers\PaymentGatewayController::class, 'processPayment']);
     });
 
-    // Payment Webhooks (public routes, but should verify webhook signatures)
     Route::prefix('erp/payment-webhooks')->group(function () {
         Route::post('/stripe', [\App\Modules\ERP\Http\Controllers\PaymentWebhookController::class, 'stripe']);
         Route::post('/paypal', [\App\Modules\ERP\Http\Controllers\PaymentWebhookController::class, 'paypal']);
     });
 
-    // Project Management
     Route::prefix('erp/projects')->group(function () {
         Route::get('/', [\App\Modules\ERP\Http\Controllers\ProjectController::class, 'index']);
         Route::post('/', [\App\Modules\ERP\Http\Controllers\ProjectController::class, 'store']);
@@ -622,7 +598,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::patch('/{project}', [\App\Modules\ERP\Http\Controllers\ProjectController::class, 'update']);
         Route::delete('/{project}', [\App\Modules\ERP\Http\Controllers\ProjectController::class, 'destroy']);
 
-        // Project Tasks
         Route::get('/{project}/tasks', [\App\Modules\ERP\Http\Controllers\ProjectTaskController::class, 'index']);
         Route::post('/{project}/tasks', [\App\Modules\ERP\Http\Controllers\ProjectTaskController::class, 'store']);
         Route::get('/{project}/tasks/{projectTask}', [\App\Modules\ERP\Http\Controllers\ProjectTaskController::class, 'show']);
@@ -631,23 +606,22 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::delete('/{project}/tasks/{projectTask}', [\App\Modules\ERP\Http\Controllers\ProjectTaskController::class, 'destroy']);
     });
 
-    // E-Commerce - Admin Routes
     Route::prefix('ecommerce')->middleware(['tenant.rate_limit:60,1'])->group(function () {
-        // File Upload
         Route::prefix('upload')->group(function () {
             Route::post('/image', [\App\Modules\ECommerce\Http\Controllers\FileUploadController::class, 'uploadImage']);
         });
 
-        // Stores
+
         Route::prefix('stores')->group(function () {
             Route::get('/', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'index']);
+            Route::get('/my-store', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'myStore']);
             Route::post('/', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'store']);
             Route::get('/{store}', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'show']);
             Route::put('/{store}', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'update']);
             Route::delete('/{store}', [\App\Modules\ECommerce\Http\Controllers\StoreController::class, 'destroy']);
         });
 
-        // Themes
+
         Route::prefix('themes')->group(function () {
             Route::get('/', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'index']);
             Route::get('/templates', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'templates']);
@@ -656,16 +630,22 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
             Route::get('/{theme}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'show']);
             Route::put('/{theme}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'update']);
             Route::delete('/{theme}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'destroy']);
+            
+            // Theme Pages
+            Route::get('/{theme}/pages', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'getPages']);
+            Route::get('/{theme}/pages/{pageType}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'getPage']);
+            Route::put('/{theme}/pages/{pageType}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'updatePage']);
+            Route::post('/{theme}/pages/{pageType}/publish', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'publishPage']);
         });
 
-        // Orders
+
         Route::prefix('orders')->group(function () {
             Route::get('/', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'index']);
             Route::get('/{order}', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'show']);
             Route::put('/{order}', [\App\Modules\ECommerce\Http\Controllers\OrderController::class, 'update']);
         });
 
-        // Pages
+
         Route::prefix('pages')->group(function () {
             Route::get('/', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'index']);
             Route::get('/templates', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'templates']);
@@ -676,7 +656,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
             Route::delete('/{page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'destroy']);
         });
 
-        // Page Builder
         Route::prefix('page-builder')->group(function () {
             Route::get('/block-types', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'getBlockTypes']);
             Route::get('/reusable-blocks', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'getReusableBlocks']);
@@ -686,7 +665,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
             Route::post('/{page}/publish', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'publishPageContent']);
         });
 
-        // Storefront Layouts
         Route::prefix('storefront-layouts')->group(function () {
             Route::get('/', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'index']);
             Route::get('/by-store/{store}', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'getByStore']);
@@ -694,7 +672,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
             Route::post('/by-store/{store}/publish', [\App\Modules\ECommerce\Http\Controllers\StorefrontLayoutController::class, 'publishByStore']);
         });
 
-        // Product Sync
         Route::prefix('product-sync')->group(function () {
             Route::get('/status', [\App\Modules\ECommerce\Http\Controllers\ProductSyncController::class, 'getStatus']);
             Route::post('/sync', [\App\Modules\ECommerce\Http\Controllers\ProductSyncController::class, 'sync']);
@@ -704,7 +681,6 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
     });
 
 
-    // Timesheets
     Route::prefix('erp/timesheets')->group(function () {
         Route::get('/', [\App\Modules\ERP\Http\Controllers\TimesheetController::class, 'index']);
         Route::post('/', [\App\Modules\ERP\Http\Controllers\TimesheetController::class, 'store']);
@@ -718,9 +694,7 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
     });
 });
 
-// Platform-level routes (Site Owner only - NO tenant.resolve middleware)
 Route::prefix('platform')->group(function () {
-    // Site Owner management (can be accessed without auth for initial setup)
     Route::prefix('site-owners')->group(function () {
         Route::post('/', [\App\Platform\Http\Controllers\SiteOwnerController::class, 'create']);
         Route::get('/', [\App\Platform\Http\Controllers\SiteOwnerController::class, 'index'])
@@ -729,7 +703,6 @@ Route::prefix('platform')->group(function () {
             ->middleware(['auth:sanctum', 'platform.owner']);
     });
 
-    // Tenant management (requires auth and platform.owner)
     Route::middleware(['auth:sanctum', 'platform.owner'])->group(function () {
         Route::prefix('tenants')->group(function () {
             Route::get('/', [\App\Platform\Http\Controllers\TenantController::class, 'index']);
@@ -743,14 +716,12 @@ Route::prefix('platform')->group(function () {
             Route::post('/{tenant}/suspend', [\App\Platform\Http\Controllers\TenantController::class, 'suspend']);
         });
 
-        // System Health
         Route::prefix('system-health')->group(function () {
             Route::get('/', [\App\Platform\Http\Controllers\PlatformSystemHealthController::class, 'index']);
             Route::get('/tenants', [\App\Platform\Http\Controllers\PlatformSystemHealthController::class, 'tenants']);
             Route::get('/alerts', [\App\Platform\Http\Controllers\PlatformSystemHealthController::class, 'alerts']);
         });
 
-        // Platform Settings
         Route::prefix('settings')->group(function () {
             Route::get('/', [\App\Platform\Http\Controllers\PlatformSettingsController::class, 'index']);
             Route::put('/', [\App\Platform\Http\Controllers\PlatformSettingsController::class, 'update']);
@@ -764,7 +735,6 @@ Route::prefix('platform')->group(function () {
             Route::put('/security', [\App\Platform\Http\Controllers\PlatformSettingsController::class, 'updateSecurity']);
         });
 
-        // Platform Analytics
         Route::prefix('analytics')->group(function () {
             Route::get('/overview', [\App\Platform\Http\Controllers\PlatformAnalyticsController::class, 'overview']);
             Route::get('/tenants-growth', [\App\Platform\Http\Controllers\PlatformAnalyticsController::class, 'tenantsGrowth']);
@@ -772,7 +742,7 @@ Route::prefix('platform')->group(function () {
             Route::get('/usage-by-tenant', [\App\Platform\Http\Controllers\PlatformAnalyticsController::class, 'usageByTenant']);
         });
 
-        // Platform Reports
+
         Route::prefix('reports')->group(function () {
             Route::get('/tenants-summary', [\App\Platform\Http\Controllers\PlatformReportsController::class, 'tenantsSummary']);
             Route::get('/users-summary', [\App\Platform\Http\Controllers\PlatformReportsController::class, 'usersSummary']);
@@ -781,11 +751,9 @@ Route::prefix('platform')->group(function () {
             Route::post('/export', [\App\Platform\Http\Controllers\PlatformReportsController::class, 'export']);
         });
 
-        // Report download (without auth middleware - files are protected by being in storage)
         Route::get('/reports/download/{filename}', [\App\Platform\Http\Controllers\PlatformReportsController::class, 'download'])
             ->middleware(['auth:sanctum', 'platform.owner']);
 
-        // Platform Audit Logs
         Route::prefix('audit-logs')->group(function () {
             Route::get('/', [\App\Platform\Http\Controllers\PlatformAuditLogsController::class, 'index']);
             Route::get('/statistics', [\App\Platform\Http\Controllers\PlatformAuditLogsController::class, 'statistics']);
@@ -794,6 +762,5 @@ Route::prefix('platform')->group(function () {
     });
 });
 
-// Public health check (no auth required)
 Route::get('/health', [\App\Http\Controllers\HealthCheckController::class, 'index']);
 
