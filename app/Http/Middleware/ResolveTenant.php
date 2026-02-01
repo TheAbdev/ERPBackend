@@ -72,18 +72,23 @@ class ResolveTenant
      */
     protected function resolveTenant(Request $request): ?Tenant
     {
-        // Priority 1: Check custom header (X-Tenant-ID, X-Tenant-Slug, or X-Tenant)
+        // Priority 1: Check custom header (X-Tenant-ID) - HIGHEST PRIORITY
+        // This is the most reliable way, especially for cross-domain requests
         if ($request->hasHeader('X-Tenant-ID')) {
-            return Tenant::find($request->header('X-Tenant-ID'));
+            $tenantId = $request->header('X-Tenant-ID');
+            $tenant = Tenant::find($tenantId);
+            if ($tenant) {
+                return $tenant;
+            }
         }
 
-        // Support both X-Tenant-Slug and X-Tenant headers for convenience
+        // Priority 2: Check X-Tenant-Slug header
         $tenantSlug = $request->header('X-Tenant-Slug') ?? $request->header('X-Tenant');
         if ($tenantSlug) {
             return Tenant::where('slug', $tenantSlug)->first();
         }
 
-        // Priority 2: Check subdomain
+        // Priority 3: Check subdomain
         $host = $request->getHost();
         $subdomain = $this->extractSubdomain($host);
 
@@ -94,10 +99,19 @@ class ResolveTenant
             }
         }
 
-        // Priority 3: Check custom domain
+        // Priority 4: Check custom domain
         $tenant = Tenant::where('domain', $host)->first();
         if ($tenant) {
             return $tenant;
+        }
+
+        // Priority 5: If user is authenticated and has tenant_id, use that
+        $user = $request->user();
+        if ($user && $user->tenant_id) {
+            $tenant = Tenant::find($user->tenant_id);
+            if ($tenant) {
+                return $tenant;
+            }
         }
 
         return null;
