@@ -105,6 +105,106 @@ class Tenant extends Model
     }
 
     /**
+     * Get the leads for the tenant.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function leads()
+    {
+        return $this->hasMany(\App\Modules\CRM\Models\Lead::class);
+    }
+
+    /**
+     * Get the contacts for the tenant.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function contacts()
+    {
+        return $this->hasMany(\App\Modules\CRM\Models\Contact::class);
+    }
+
+    /**
+     * Get the accounts for the tenant.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function accounts()
+    {
+        return $this->hasMany(\App\Modules\CRM\Models\Account::class);
+    }
+
+    /**
+     * Get the deals for the tenant.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function deals()
+    {
+        return $this->hasMany(\App\Modules\CRM\Models\Deal::class);
+    }
+
+    /**
+     * Get the activities for the tenant.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function activities()
+    {
+        return $this->hasMany(\App\Modules\CRM\Models\Activity::class);
+    }
+
+    /**
+     * Get the notes for the tenant.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function notes()
+    {
+        return $this->hasMany(\App\Modules\CRM\Models\Note::class);
+    }
+
+    /**
+     * Get the sales orders for the tenant.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function salesOrders()
+    {
+        return $this->hasMany(\App\Modules\ERP\Models\SalesOrder::class);
+    }
+
+    /**
+     * Get the invoices for the tenant.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function invoices()
+    {
+        return $this->hasMany(\App\Modules\ERP\Models\SalesInvoice::class);
+    }
+
+    /**
+     * Get the products for the tenant.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function products()
+    {
+        return $this->hasMany(\App\Modules\ERP\Models\Product::class);
+    }
+
+    /**
+     * Get the projects for the tenant.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function projects()
+    {
+        return $this->hasMany(\App\Modules\ERP\Models\Project::class);
+    }
+
+    /**
      * Get tenant usage statistics.
      *
      * @return array

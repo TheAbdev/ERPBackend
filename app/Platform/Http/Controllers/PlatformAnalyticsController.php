@@ -27,8 +27,8 @@ class PlatformAnalyticsController extends Controller
         // Calculate growth rate (month over month)
         $lastMonth = Carbon::now()->subMonth();
         $tenantsLastMonth = Tenant::where('created_at', '<=', $lastMonth)->count();
-        $growthRate = $tenantsLastMonth > 0 
-            ? (($totalTenants - $tenantsLastMonth) / $tenantsLastMonth) * 100 
+        $growthRate = $tenantsLastMonth > 0
+            ? (($totalTenants - $tenantsLastMonth) / $tenantsLastMonth) * 100
             : 0;
 
         return response()->json([
@@ -51,7 +51,7 @@ class PlatformAnalyticsController extends Controller
     public function tenantsGrowth(Request $request): JsonResponse
     {
         $period = $request->input('period', 'month');
-        
+
         $startDate = match($period) {
             'week' => Carbon::now()->subWeek(),
             'month' => Carbon::now()->subMonth(),
@@ -86,7 +86,7 @@ class PlatformAnalyticsController extends Controller
     public function usersGrowth(Request $request): JsonResponse
     {
         $period = $request->input('period', 'month');
-        
+
         $startDate = match($period) {
             'week' => Carbon::now()->subWeek(),
             'month' => Carbon::now()->subMonth(),
@@ -125,7 +125,7 @@ class PlatformAnalyticsController extends Controller
             // Users table doesn't have a 'status' column, so we use total users count
             // If you need to track active users, you would need to add a status column or use a different approach
             $usersCount = $tenant->users_count ?? 0;
-            
+
             return [
                 'tenant_id' => $tenant->id,
                 'tenant_name' => $tenant->name,
@@ -138,6 +138,64 @@ class PlatformAnalyticsController extends Controller
 
         return response()->json([
             'data' => $data,
+        ]);
+    }
+
+    /**
+     * Get tenant usage with pagination.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function tenantUsage(Request $request): JsonResponse
+    {
+        $tenants = Tenant::with(['users', 'owner'])
+            ->withCount([
+                'users',
+                'leads',
+                'contacts',
+                'accounts',
+                'deals',
+                'activities',
+                'notes',
+                'salesOrders',
+                'invoices',
+                'products',
+                'projects',
+            ])
+            ->paginate($request->get('per_page', 15));
+
+        $data = $tenants->map(function ($tenant) {
+            return [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'users_count' => $tenant->users_count ?? 0,
+                'active_users_count' => $tenant->users_count ?? 0,
+                'leads_count' => $tenant->leads_count ?? 0,
+                'contacts_count' => $tenant->contacts_count ?? 0,
+                'accounts_count' => $tenant->accounts_count ?? 0,
+                'deals_count' => $tenant->deals_count ?? 0,
+                'activities_count' => $tenant->activities_count ?? 0,
+                'notes_count' => $tenant->notes_count ?? 0,
+                'sales_orders_count' => $tenant->sales_orders_count ?? 0,
+                'invoices_count' => $tenant->invoices_count ?? 0,
+                'products_count' => $tenant->products_count ?? 0,
+                'projects_count' => $tenant->projects_count ?? 0,
+                'storage_used' => 0, // Placeholder - implement actual storage calculation
+                'api_calls_count' => 0, // Placeholder - implement actual API calls tracking
+                'created_at' => $tenant->created_at,
+                'updated_at' => $tenant->updated_at,
+            ];
+        });
+
+        return response()->json([
+            'data' => $data,
+            'meta' => [
+                'current_page' => $tenants->currentPage(),
+                'per_page' => $tenants->perPage(),
+                'total' => $tenants->total(),
+                'last_page' => $tenants->lastPage(),
+            ],
         ]);
     }
 }

@@ -630,7 +630,7 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
             Route::get('/{theme}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'show']);
             Route::put('/{theme}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'update']);
             Route::delete('/{theme}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'destroy']);
-            
+
             // Theme Pages
             Route::get('/{theme}/pages', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'getPages']);
             Route::get('/{theme}/pages/{pageType}', [\App\Modules\ECommerce\Http\Controllers\ThemeController::class, 'getPage']);
@@ -740,6 +740,7 @@ Route::prefix('platform')->group(function () {
             Route::get('/tenants-growth', [\App\Platform\Http\Controllers\PlatformAnalyticsController::class, 'tenantsGrowth']);
             Route::get('/users-growth', [\App\Platform\Http\Controllers\PlatformAnalyticsController::class, 'usersGrowth']);
             Route::get('/usage-by-tenant', [\App\Platform\Http\Controllers\PlatformAnalyticsController::class, 'usageByTenant']);
+            Route::get('/tenant-usage', [\App\Platform\Http\Controllers\PlatformAnalyticsController::class, 'tenantUsage']);
         });
 
 
