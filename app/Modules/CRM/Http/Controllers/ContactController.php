@@ -20,13 +20,24 @@ class ContactController extends Controller
      *
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(): AnonymousResourceCollection
+    public function index(\Illuminate\Http\Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Contact::class);
 
-        $contacts = Contact::with(['creator', 'lead'])
-            ->latest()
-            ->paginate();
+        $query = Contact::with(['creator', 'lead']);
+
+        // Search functionality
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $contacts = $query->latest()->paginate();
 
         return ContactResource::collection($contacts);
     }

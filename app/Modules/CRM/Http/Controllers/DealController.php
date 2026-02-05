@@ -21,13 +21,31 @@ class DealController extends Controller
      *
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(): AnonymousResourceCollection
+    public function index(\Illuminate\Http\Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Deal::class);
 
-        $deals = Deal::with(['pipeline', 'stage', 'lead', 'contact', 'account', 'creator', 'assignee'])
-            ->latest()
-            ->paginate();
+        $query = Deal::with(['pipeline', 'stage', 'lead', 'contact', 'account', 'creator', 'assignee']);
+
+        // Search functionality
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by pipeline_id
+        if ($request->has('pipeline_id') && $request->pipeline_id) {
+            $query->where('pipeline_id', $request->pipeline_id);
+        }
+
+        // Filter by status
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        $deals = $query->latest()->paginate();
 
         return DealResource::collection($deals);
     }

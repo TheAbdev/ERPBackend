@@ -30,13 +30,29 @@ class SalesOrderController extends Controller
      *
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(): AnonymousResourceCollection
+    public function index(\Illuminate\Http\Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', SalesOrder::class);
 
-        $orders = SalesOrder::with(['warehouse', 'currency', 'creator', 'items.product'])
-            ->latest('order_date')
-            ->paginate();
+        $query = SalesOrder::with(['warehouse', 'currency', 'creator', 'items.product']);
+
+        // Search functionality
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                  ->orWhere('customer_name', 'like', "%{$search}%")
+                  ->orWhere('customer_email', 'like', "%{$search}%")
+                  ->orWhere('customer_phone', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        $orders = $query->latest('order_date')->paginate();
 
         return SalesOrderResource::collection($orders);
     }

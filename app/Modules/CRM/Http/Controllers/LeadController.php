@@ -65,13 +65,33 @@ class LeadController extends Controller
      *
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(): AnonymousResourceCollection
+    public function index(\Illuminate\Http\Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Lead::class);
 
-        $leads = Lead::with(['creator', 'assignee'])
-            ->latest()
-            ->paginate();
+        $query = Lead::with(['creator', 'assignee']);
+
+        // Search functionality
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by source
+        if ($request->has('source') && $request->source) {
+            $query->where('source', $request->source);
+        }
+
+        $leads = $query->latest()->paginate();
 
         return LeadResource::collection($leads);
     }

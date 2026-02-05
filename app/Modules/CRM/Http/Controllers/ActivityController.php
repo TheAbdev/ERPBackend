@@ -43,10 +43,16 @@ class ActivityController extends Controller
         // Filter by due_date (upcoming, overdue, today)
         if ($request->has('due_date_filter')) {
             $now = now();
+            $todayStart = $now->copy()->startOfDay();
+            $todayEnd = $now->copy()->endOfDay();
+
             match ($request->due_date_filter) {
-                'overdue' => $query->where('due_date', '<', $now)->where('status', '!=', 'completed'),
+                'overdue' => $query->where(function ($q) use ($todayStart) {
+                    $q->where('due_date', '<', $todayStart)
+                      ->where('status', '!=', 'completed');
+                }),
                 'today' => $query->whereDate('due_date', $now->toDateString()),
-                'upcoming' => $query->where('due_date', '>', $now),
+                'upcoming' => $query->where('due_date', '>', $todayEnd),
                 default => null,
             };
         }

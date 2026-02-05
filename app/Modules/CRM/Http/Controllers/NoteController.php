@@ -24,10 +24,21 @@ class NoteController extends Controller
 
         $query = Note::with(['creator', 'mentions', 'noteable', 'replies.creator']);
 
+        // Search functionality
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('body', 'like', "%{$search}%");
+            });
+        }
+
         // Filter by noteable entity
-        if ($request->has('noteable_type') && $request->has('noteable_id')) {
-            $query->where('noteable_type', $request->noteable_type)
-                ->where('noteable_id', $request->noteable_id);
+        if ($request->has('noteable_type') && $request->noteable_type) {
+            $query->where('noteable_type', $request->noteable_type);
+        }
+
+        if ($request->has('noteable_id') && $request->noteable_id) {
+            $query->where('noteable_id', $request->noteable_id);
         }
 
         // Only show top-level notes (not replies) unless filtering by parent

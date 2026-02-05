@@ -20,13 +20,24 @@ class AccountController extends Controller
      *
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(): AnonymousResourceCollection
+    public function index(\Illuminate\Http\Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Account::class);
 
-        $accounts = Account::with(['creator', 'parent', 'children', 'contacts'])
-            ->latest()
-            ->paginate();
+        $query = Account::with(['creator', 'parent', 'children', 'contacts']);
+
+        // Search functionality
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('industry', 'like', "%{$search}%");
+            });
+        }
+
+        $accounts = $query->latest()->paginate();
 
         return AccountResource::collection($accounts);
     }
