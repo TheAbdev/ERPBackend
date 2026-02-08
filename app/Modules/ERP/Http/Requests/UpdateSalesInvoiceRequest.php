@@ -33,7 +33,8 @@ class UpdateSalesInvoiceRequest extends FormRequest
             'due_date' => ['sometimes', 'required', 'date', 'after_or_equal:issue_date'],
             'subtotal' => ['sometimes', 'required', 'numeric', 'min:0'],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
-            'total' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'total' => ['sometimes', 'required', 'numeric', 'min:0.01'],
             'notes' => ['nullable', 'string'],
             'items' => ['sometimes', 'required', 'array', 'min:1'],
             'items.*.product_id' => [
@@ -47,8 +48,11 @@ class UpdateSalesInvoiceRequest extends FormRequest
             'items.*.description' => ['required', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'items.*.tax_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.tax_amount' => ['nullable', 'numeric', 'min:0'],
-            'items.*.total' => ['required', 'numeric', 'min:0'],
+            'items.*.total' => ['required', 'numeric', 'min:0.01'],
         ];
     }
 }

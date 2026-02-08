@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             SuperAdminSeeder::class,
             AddECommercePermissionsSeeder::class,
+            ChartOfAccountsSeeder::class,
          //   ECommerceThemeSeeder::class,
          //   SiteOwnerSeeder::class,
         ]);

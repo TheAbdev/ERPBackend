@@ -328,10 +328,20 @@ class AppServiceProvider extends ServiceProvider
             \App\Core\Policies\RolePolicy::class
         );
 
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\ERP\Models\FiscalYear::class,
+            \App\Modules\ERP\Policies\FiscalYearPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\ERP\Models\FiscalPeriod::class,
+            \App\Modules\ERP\Policies\FiscalPeriodPolicy::class
+        );
+
         // Register observers
         \App\Modules\CRM\Models\Lead::observe(\App\Observers\LeadObserver::class);
         \App\Modules\CRM\Models\Deal::observe(\App\Modules\CRM\Observers\DealObserver::class);
-        
+
         // Register E-Commerce observers
         \App\Modules\ERP\Models\Product::observe(\App\Observers\ProductObserver::class);
         \App\Modules\ERP\Models\SalesOrder::observe(\App\Observers\SalesOrderObserver::class);

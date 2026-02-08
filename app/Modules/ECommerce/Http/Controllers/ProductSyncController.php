@@ -104,8 +104,8 @@ class ProductSyncController extends Controller
                 $file,
                 $filename
             );
-            $image = $disk->url($storedPath);
-            $image = str_replace('http://127.0.0.1:8000', 'http://localhost', $image);
+            // Store the full path including storage/app/public for proper access on cPanel
+            $image = url('storage/app/public') . '/' . str_replace('\\', '/', $storedPath);
         } else {
             $request->validate([
                 'ecommerce_images' => ['sometimes', 'string', 'nullable', 'url'],

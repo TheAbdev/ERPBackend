@@ -37,9 +37,8 @@ class FileUploadController extends Controller
             $filename
         );
 
-        // Get public URL
-        $url = Storage::disk('public')->url($storedPath);
-        $url = str_replace('http://127.0.0.1:8000', 'http://localhost', $url);
+        // Get public URL with full path for cPanel compatibility
+        $url = url('storage/app/public') . '/' . str_replace('\\', '/', $storedPath);
 
         return response()->json([
             'message' => 'Image uploaded successfully.',

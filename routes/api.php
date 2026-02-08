@@ -519,6 +519,22 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::get('/vat-return', [\App\Modules\ERP\Http\Controllers\FinancialReportController::class, 'vatReturn']);
     });
 
+    Route::prefix('erp/fiscal-years')->group(function () {
+        Route::get('/', [\App\Modules\ERP\Http\Controllers\FiscalYearController::class, 'index']);
+        Route::post('/', [\App\Modules\ERP\Http\Controllers\FiscalYearController::class, 'store']);
+        Route::get('/{fiscalYear}', [\App\Modules\ERP\Http\Controllers\FiscalYearController::class, 'show']);
+        Route::put('/{fiscalYear}', [\App\Modules\ERP\Http\Controllers\FiscalYearController::class, 'update']);
+        Route::delete('/{fiscalYear}', [\App\Modules\ERP\Http\Controllers\FiscalYearController::class, 'destroy']);
+    });
+
+    Route::prefix('erp/fiscal-periods')->group(function () {
+        Route::get('/', [\App\Modules\ERP\Http\Controllers\FiscalPeriodController::class, 'index']);
+        Route::post('/', [\App\Modules\ERP\Http\Controllers\FiscalPeriodController::class, 'store']);
+        Route::get('/{fiscalPeriod}', [\App\Modules\ERP\Http\Controllers\FiscalPeriodController::class, 'show']);
+        Route::put('/{fiscalPeriod}', [\App\Modules\ERP\Http\Controllers\FiscalPeriodController::class, 'update']);
+        Route::delete('/{fiscalPeriod}', [\App\Modules\ERP\Http\Controllers\FiscalPeriodController::class, 'destroy']);
+    });
+
     Route::prefix('erp/dashboard')->middleware(['tenant.rate_limit:60,1'])->group(function () {
         Route::get('/metrics', [\App\Modules\ERP\Http\Controllers\DashboardController::class, 'metrics']);
         Route::get('/recent-activities', [\App\Modules\ERP\Http\Controllers\DashboardController::class, 'recentActivities']);

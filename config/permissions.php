@@ -293,6 +293,20 @@ return [
         'erp.timesheets.delete',
         'erp.timesheets.restore',
 
+        'erp.fiscal-years.view',
+        'erp.fiscal-years.viewAny',
+        'erp.fiscal-years.create',
+        'erp.fiscal-years.update',
+        'erp.fiscal-years.delete',
+        'erp.fiscal-years.restore',
+
+        'erp.fiscal-periods.view',
+        'erp.fiscal-periods.viewAny',
+        'erp.fiscal-periods.create',
+        'erp.fiscal-periods.update',
+        'erp.fiscal-periods.delete',
+        'erp.fiscal-periods.restore',
+
         'core.custom_dashboards.view',
         'core.custom_dashboards.viewAny',
         'core.custom_dashboards.create',
@@ -386,6 +400,8 @@ return [
             'payment_gateways',
             'projects',
             'timesheets',
+            'fiscal-years',
+            'fiscal-periods',
         ],
         'ecommerce' => [
             'stores',

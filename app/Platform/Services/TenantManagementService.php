@@ -6,6 +6,7 @@ use App\Core\Models\Role;
 use App\Core\Models\Tenant;
 use App\Mail\WelcomeUserMail;
 use App\Models\User;
+use App\Modules\ERP\Models\Account;
 use App\Modules\ERP\Models\FiscalPeriod;
 use App\Modules\ERP\Models\FiscalYear;
 use App\Modules\ERP\Models\NumberSequence;
@@ -58,6 +59,9 @@ class TenantManagementService
 
             // Create default fiscal year and periods for the tenant
             $this->createDefaultFiscalYear($tenant);
+
+            // Create default chart of accounts for the tenant
+            $this->createDefaultChartOfAccounts($tenant);
 
             // Assign owner if provided
             if (!empty($data['owner_user_id']) || !empty($data['owner_email'])) {
@@ -353,6 +357,215 @@ class TenantManagementService
                 'is_active' => true,
                 'is_closed' => false,
             ]);
+        }
+    }
+
+    /**
+     * Create default chart of accounts for a tenant.
+     *
+     * @param  Tenant  $tenant
+     * @return void
+     */
+    protected function createDefaultChartOfAccounts(Tenant $tenant): void
+    {
+        // Disable events to prevent audit logging during seeding
+        Account::withoutEvents(function () use ($tenant) {
+            // Define the chart of accounts structure
+            $accounts = [
+                // Assets
+                [
+                    'code' => 'A',
+                    'name' => 'Assets',
+                    'type' => 'asset',
+                    'description' => 'Asset accounts',
+                    'children' => [
+                        [
+                            'code' => 'A-1',
+                            'name' => 'Current Assets',
+                            'type' => 'asset',
+                            'description' => 'Current assets',
+                            'children' => [
+                                [
+                                    'code' => 'AR',
+                                    'name' => 'Accounts Receivable',
+                                    'type' => 'asset',
+                                    'description' => 'Money owed by customers',
+                                ],
+                                [
+                                    'code' => 'INV',
+                                    'name' => 'Inventory',
+                                    'type' => 'asset',
+                                    'description' => 'Products held for sale',
+                                ],
+                                [
+                                    'code' => 'CASH',
+                                    'name' => 'Cash',
+                                    'type' => 'asset',
+                                    'description' => 'Cash and cash equivalents',
+                                ],
+                            ],
+                        ],
+                        [
+                            'code' => 'A-2',
+                            'name' => 'Fixed Assets',
+                            'type' => 'asset',
+                            'description' => 'Long-term assets',
+                            'children' => [
+                                [
+                                    'code' => 'PPE',
+                                    'name' => 'Property, Plant & Equipment',
+                                    'type' => 'asset',
+                                    'description' => 'Fixed assets',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                // Liabilities
+                [
+                    'code' => 'L',
+                    'name' => 'Liabilities',
+                    'type' => 'liability',
+                    'description' => 'Liability accounts',
+                    'children' => [
+                        [
+                            'code' => 'L-1',
+                            'name' => 'Current Liabilities',
+                            'type' => 'liability',
+                            'description' => 'Short-term liabilities',
+                            'children' => [
+                                [
+                                    'code' => 'AP',
+                                    'name' => 'Accounts Payable',
+                                    'type' => 'liability',
+                                    'description' => 'Money owed to suppliers',
+                                ],
+                                [
+                                    'code' => 'TAX',
+                                    'name' => 'VAT Payable',
+                                    'type' => 'liability',
+                                    'description' => 'VAT collected and payable',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                // Equity
+                [
+                    'code' => 'E',
+                    'name' => 'Equity',
+                    'type' => 'equity',
+                    'description' => 'Equity accounts',
+                    'children' => [
+                        [
+                            'code' => 'CAPITAL',
+                            'name' => 'Capital Stock',
+                            'type' => 'equity',
+                            'description' => 'Owner capital',
+                        ],
+                    ],
+                ],
+                // Revenue
+                [
+                    'code' => 'R',
+                    'name' => 'Revenue',
+                    'type' => 'revenue',
+                    'description' => 'Revenue accounts',
+                    'children' => [
+                        [
+                            'code' => 'REV',
+                            'name' => 'Sales Revenue',
+                            'type' => 'revenue',
+                            'description' => 'Revenue from sales',
+                        ],
+                        [
+                            'code' => 'SRV-REV',
+                            'name' => 'Service Revenue',
+                            'type' => 'revenue',
+                            'description' => 'Revenue from services',
+                        ],
+                    ],
+                ],
+                // Expenses
+                [
+                    'code' => 'EX',
+                    'name' => 'Expenses',
+                    'type' => 'expense',
+                    'description' => 'Expense accounts',
+                    'children' => [
+                        [
+                            'code' => 'COGS',
+                            'name' => 'Cost of Goods Sold',
+                            'type' => 'expense',
+                            'description' => 'Cost of products sold',
+                        ],
+                        [
+                            'code' => 'PUR',
+                            'name' => 'Purchase Expense',
+                            'type' => 'expense',
+                            'description' => 'Purchase of goods',
+                        ],
+                        [
+                            'code' => 'SALARY',
+                            'name' => 'Salary Expense',
+                            'type' => 'expense',
+                            'description' => 'Employee salaries',
+                        ],
+                        [
+                            'code' => 'RENT',
+                            'name' => 'Rent Expense',
+                            'type' => 'expense',
+                            'description' => 'Building rent',
+                        ],
+                    ],
+                ],
+            ];
+
+            // Insert accounts recursively
+            $this->insertAccountsForTenant($tenant->id, $accounts);
+        });
+    }
+
+    /**
+     * Insert accounts recursively for a tenant.
+     *
+     * @param  int  $tenantId
+     * @param  array  $accounts
+     * @param  int|null  $parentId
+     * @param  int  $displayOrder
+     * @return void
+     */
+    private function insertAccountsForTenant($tenantId, $accounts, $parentId = null, $displayOrder = 0): void
+    {
+        foreach ($accounts as $accountData) {
+            $children = $accountData['children'] ?? [];
+            unset($accountData['children']);
+
+            $displayOrder++;
+
+            // Check if account already exists
+            $existing = Account::where('tenant_id', $tenantId)
+                ->where('code', $accountData['code'])
+                ->first();
+
+            if (!$existing) {
+                $account = Account::create([
+                    'tenant_id' => $tenantId,
+                    'parent_id' => $parentId,
+                    'code' => $accountData['code'],
+                    'name' => $accountData['name'],
+                    'type' => $accountData['type'],
+                    'description' => $accountData['description'] ?? null,
+                    'is_active' => true,
+                    'display_order' => $displayOrder,
+                ]);
+            } else {
+                $account = $existing;
+            }
+
+            if (!empty($children)) {
+                $this->insertAccountsForTenant($tenantId, $children, $account->id, 0);
+            }
         }
     }
 }

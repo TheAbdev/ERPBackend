@@ -95,9 +95,10 @@ class InvoiceService extends BaseService
             ]);
 
             $currency = $invoice->currency;
-            $netAmount = $invoice->net_amount ?? ($invoice->total - $invoice->tax_amount);
-            $taxAmount = $invoice->tax_amount ?? 0;
-            $grossAmount = $invoice->total;
+            $taxAmount = (float) ($invoice->tax_amount ?? 0);
+            $grossAmount = (float) $invoice->total;
+            // Net amount is always gross - tax
+            $netAmount = $grossAmount - $taxAmount;
 
             $lineNumber = 1;
 
@@ -114,7 +115,7 @@ class InvoiceService extends BaseService
                 'line_number' => $lineNumber++,
             ]);
 
-            // Credit: Sales Revenue (Net amount)
+            // Credit: Sales Revenue (Net amount = total - tax)
             JournalEntryLine::create([
                 'tenant_id' => $this->getTenantId(),
                 'journal_entry_id' => $entry->id,
@@ -128,11 +129,43 @@ class InvoiceService extends BaseService
             ]);
 
             // Credit: VAT Payable (if tax exists)
-            if ($taxAmount > 0 && $invoice->tax_breakdown) {
-                foreach ($invoice->tax_breakdown as $taxLine) {
-                    $taxRateId = $taxLine['tax_rate_id'] ?? null;
-                    if ($taxRateId) {
-                        $taxAccount = $this->taxCalculationService->getTaxAccount($taxRateId);
+            if ($taxAmount > 0.01) {
+                // If tax_breakdown exists, use it; otherwise create a single entry
+                if ($invoice->tax_breakdown && !empty($invoice->tax_breakdown)) {
+                    $totalTaxFromBreakdown = 0;
+                    foreach ($invoice->tax_breakdown as $taxLine) {
+                        $taxRateId = $taxLine['tax_rate_id'] ?? null;
+                        $lineTaxAmount = (float) ($taxLine['tax_amount'] ?? 0);
+                        if ($lineTaxAmount > 0) {
+                            if ($taxRateId) {
+                                $taxAccount = $this->taxCalculationService->getTaxAccount($taxRateId);
+                                if ($taxAccount) {
+                                    JournalEntryLine::create([
+                                        'tenant_id' => $this->getTenantId(),
+                                        'journal_entry_id' => $entry->id,
+                                        'account_id' => $taxAccount->id,
+                                        'currency_id' => $currency->id,
+                                        'debit' => 0,
+                                        'credit' => $lineTaxAmount,
+                                        'amount_base' => $lineTaxAmount,
+                                        'description' => "VAT Payable ({$taxLine['tax_rate_code']}) for Invoice {$invoice->invoice_number}",
+                                        'line_number' => $lineNumber++,
+                                    ]);
+                                    $totalTaxFromBreakdown += $lineTaxAmount;
+                                }
+                            }
+                        }
+                    }
+                    // If total tax from breakdown doesn't match, add difference
+                    $diff = abs($taxAmount - $totalTaxFromBreakdown);
+                    if ($diff > 0.01) {
+                        $taxAccount = $this->getAccountByCode('TAX');
+                        if (!$taxAccount) {
+                            $taxRate = \App\Modules\ERP\Models\TaxRate::where('tenant_id', $this->getTenantId())->first();
+                            if ($taxRate) {
+                                $taxAccount = $this->taxCalculationService->getTaxAccount($taxRate->id);
+                            }
+                        }
                         if ($taxAccount) {
                             JournalEntryLine::create([
                                 'tenant_id' => $this->getTenantId(),
@@ -140,12 +173,35 @@ class InvoiceService extends BaseService
                                 'account_id' => $taxAccount->id,
                                 'currency_id' => $currency->id,
                                 'debit' => 0,
-                                'credit' => $taxLine['tax_amount'],
-                                'amount_base' => $taxLine['tax_amount'],
-                                'description' => "VAT Payable ({$taxLine['tax_rate_code']}) for Invoice {$invoice->invoice_number}",
+                                'credit' => $diff,
+                                'amount_base' => $diff,
+                                'description' => "VAT Payable (Adjustment) for Invoice {$invoice->invoice_number}",
                                 'line_number' => $lineNumber++,
                             ]);
                         }
+                    }
+                } else {
+                    // If no tax breakdown, create a single VAT Payable entry
+                    $taxAccount = $this->getAccountByCode('TAX');
+                    if (!$taxAccount) {
+                        $taxRate = \App\Modules\ERP\Models\TaxRate::where('tenant_id', $this->getTenantId())->first();
+                        if ($taxRate) {
+                            $taxAccount = $this->taxCalculationService->getTaxAccount($taxRate->id);
+                        }
+                    }
+
+                    if ($taxAccount) {
+                        JournalEntryLine::create([
+                            'tenant_id' => $this->getTenantId(),
+                            'journal_entry_id' => $entry->id,
+                            'account_id' => $taxAccount->id,
+                            'currency_id' => $currency->id,
+                            'debit' => 0,
+                            'credit' => $taxAmount,
+                            'amount_base' => $taxAmount,
+                            'description' => "VAT Payable for Invoice {$invoice->invoice_number}",
+                            'line_number' => $lineNumber++,
+                        ]);
                     }
                 }
             }
@@ -208,9 +264,10 @@ class InvoiceService extends BaseService
             ]);
 
             $currency = $invoice->currency;
-            $netAmount = $invoice->net_amount ?? ($invoice->total - $invoice->tax_amount);
-            $taxAmount = $invoice->tax_amount ?? 0;
-            $grossAmount = $invoice->total;
+            $taxAmount = (float) ($invoice->tax_amount ?? 0);
+            $grossAmount = (float) $invoice->total;
+            // Net amount is always gross - tax
+            $netAmount = $grossAmount - $taxAmount;
 
             $lineNumber = 1;
 
@@ -228,24 +285,79 @@ class InvoiceService extends BaseService
             ]);
 
             // Debit: VAT Receivable (if tax exists)
-            if ($taxAmount > 0 && $invoice->tax_breakdown) {
-                foreach ($invoice->tax_breakdown as $taxLine) {
-                    $taxRateId = $taxLine['tax_rate_id'] ?? null;
-                    if ($taxRateId) {
-                        $taxAccount = $this->taxCalculationService->getTaxAccount($taxRateId);
+            if ($taxAmount > 0.01) {
+                // If tax_breakdown exists, use it; otherwise create a single entry
+                if ($invoice->tax_breakdown && !empty($invoice->tax_breakdown)) {
+                    $totalTaxFromBreakdown = 0;
+                    foreach ($invoice->tax_breakdown as $taxLine) {
+                        $taxRateId = $taxLine['tax_rate_id'] ?? null;
+                        $lineTaxAmount = (float) ($taxLine['tax_amount'] ?? 0);
+                        if ($lineTaxAmount > 0) {
+                            if ($taxRateId) {
+                                $taxAccount = $this->taxCalculationService->getTaxAccount($taxRateId);
+                                if ($taxAccount) {
+                                    JournalEntryLine::create([
+                                        'tenant_id' => $this->getTenantId(),
+                                        'journal_entry_id' => $entry->id,
+                                        'account_id' => $taxAccount->id,
+                                        'currency_id' => $currency->id,
+                                        'debit' => $lineTaxAmount,
+                                        'credit' => 0,
+                                        'amount_base' => $lineTaxAmount,
+                                        'description' => "VAT Receivable ({$taxLine['tax_rate_code']}) for Invoice {$invoice->invoice_number}",
+                                        'line_number' => $lineNumber++,
+                                    ]);
+                                    $totalTaxFromBreakdown += $lineTaxAmount;
+                                }
+                            }
+                        }
+                    }
+                    // If total tax from breakdown doesn't match, add difference
+                    $diff = abs($taxAmount - $totalTaxFromBreakdown);
+                    if ($diff > 0.01) {
+                        $taxAccount = $this->getAccountByCode('TAX');
+                        if (!$taxAccount) {
+                            $taxRate = \App\Modules\ERP\Models\TaxRate::where('tenant_id', $this->getTenantId())->first();
+                            if ($taxRate) {
+                                $taxAccount = $this->taxCalculationService->getTaxAccount($taxRate->id);
+                            }
+                        }
                         if ($taxAccount) {
                             JournalEntryLine::create([
                                 'tenant_id' => $this->getTenantId(),
                                 'journal_entry_id' => $entry->id,
                                 'account_id' => $taxAccount->id,
                                 'currency_id' => $currency->id,
-                                'debit' => $taxLine['tax_amount'],
+                                'debit' => $diff,
                                 'credit' => 0,
-                                'amount_base' => $taxLine['tax_amount'],
-                                'description' => "VAT Receivable ({$taxLine['tax_rate_code']}) for Invoice {$invoice->invoice_number}",
+                                'amount_base' => $diff,
+                                'description' => "VAT Receivable (Adjustment) for Invoice {$invoice->invoice_number}",
                                 'line_number' => $lineNumber++,
                             ]);
                         }
+                    }
+                } else {
+                    // If no tax breakdown, create a single VAT Receivable entry
+                    $taxAccount = $this->getAccountByCode('TAX');
+                    if (!$taxAccount) {
+                        $taxRate = \App\Modules\ERP\Models\TaxRate::where('tenant_id', $this->getTenantId())->first();
+                        if ($taxRate) {
+                            $taxAccount = $this->taxCalculationService->getTaxAccount($taxRate->id);
+                        }
+                    }
+
+                    if ($taxAccount) {
+                        JournalEntryLine::create([
+                            'tenant_id' => $this->getTenantId(),
+                            'journal_entry_id' => $entry->id,
+                            'account_id' => $taxAccount->id,
+                            'currency_id' => $currency->id,
+                            'debit' => $taxAmount,
+                            'credit' => 0,
+                            'amount_base' => $taxAmount,
+                            'description' => "VAT Receivable for Invoice {$invoice->invoice_number}",
+                            'line_number' => $lineNumber++,
+                        ]);
                     }
                 }
             }

@@ -27,6 +27,9 @@ class ProjectController extends Controller
         if ($request->has('manager_id')) {
             $query->where('manager_id', $request->input('manager_id'));
         }
+        if ($request->has('search')) {
+            $query->where('name', 'like', '%' . $request->input('search') . '%');
+        }
 
         $projects = $query->latest()->paginate();
 
