@@ -505,6 +505,15 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
     });
 
     Route::prefix('erp/reports')->middleware(['tenant.rate_limit:60,1'])->group(function () {
+        // ERP analytics reports (CRM-like)
+        Route::get('/products', [\App\Modules\ERP\Http\Controllers\ReportsController::class, 'products']);
+        Route::get('/product-categories', [\App\Modules\ERP\Http\Controllers\ReportsController::class, 'productCategories']);
+        Route::get('/suppliers', [\App\Modules\ERP\Http\Controllers\ReportsController::class, 'suppliers']);
+        Route::get('/purchase-orders', [\App\Modules\ERP\Http\Controllers\ReportsController::class, 'purchaseOrders']);
+        Route::get('/sales-orders', [\App\Modules\ERP\Http\Controllers\ReportsController::class, 'salesOrders']);
+        Route::get('/invoices', [\App\Modules\ERP\Http\Controllers\ReportsController::class, 'invoices']);
+
+        // ERP report templates (existing)
         Route::get('/', [\App\Modules\ERP\Http\Controllers\ReportController::class, 'index']);
         Route::get('/{report}', [\App\Modules\ERP\Http\Controllers\ReportController::class, 'show']);
         Route::get('/{report}/export', [\App\Modules\ERP\Http\Controllers\ReportController::class, 'export']);

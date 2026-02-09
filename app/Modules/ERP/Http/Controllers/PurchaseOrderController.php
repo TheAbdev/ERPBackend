@@ -15,6 +15,7 @@ use App\Modules\ERP\Models\PurchaseOrder;
 use App\Modules\ERP\Services\PurchaseOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Request;
 
 class PurchaseOrderController extends Controller
 {
@@ -30,13 +31,18 @@ class PurchaseOrderController extends Controller
      *
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', PurchaseOrder::class);
 
-        $orders = PurchaseOrder::with(['warehouse', 'currency', 'creator', 'items.product'])
-            ->latest('order_date')
-            ->paginate();
+        $query=PurchaseOrder::with(['warehouse', 'currency', 'creator', 'items.product']);
+        if ($request->has('search')) {
+            $query->where('order_number', 'like', '%' . $request->input('search') . '%');
+        }
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+        $orders = $query->latest('order_date')->paginate();
 
         return PurchaseOrderResource::collection($orders);
     }
