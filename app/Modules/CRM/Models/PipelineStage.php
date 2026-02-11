@@ -14,6 +14,18 @@ class PipelineStage extends Model
     use BelongsToTenant, HasFactory, SoftDeletes;
 
     /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'tenant_id' => 'integer',
+        'pipeline_id' => 'integer',
+        'position' => 'integer',
+        'probability' => 'integer',
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>

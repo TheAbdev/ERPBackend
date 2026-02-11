@@ -338,6 +338,97 @@ class AppServiceProvider extends ServiceProvider
             \App\Modules\ERP\Policies\FiscalPeriodPolicy::class
         );
 
+        // Register HR policies
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\Department::class,
+            \App\Modules\HR\Policies\DepartmentPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\Position::class,
+            \App\Modules\HR\Policies\PositionPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\Employee::class,
+            \App\Modules\HR\Policies\EmployeePolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\Contract::class,
+            \App\Modules\HR\Policies\ContractPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\Attendance::class,
+            \App\Modules\HR\Policies\AttendancePolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\AttendanceRecord::class,
+            \App\Modules\HR\Policies\AttendanceRecordPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\LeaveRequest::class,
+            \App\Modules\HR\Policies\LeaveRequestPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\Payroll::class,
+            \App\Modules\HR\Policies\PayrollPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\PayrollRun::class,
+            \App\Modules\HR\Policies\PayrollRunPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\PayrollItem::class,
+            \App\Modules\HR\Policies\PayrollItemPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\Recruitment::class,
+            \App\Modules\HR\Policies\RecruitmentPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\RecruitmentOpening::class,
+            \App\Modules\HR\Policies\RecruitmentOpeningPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\PerformanceReview::class,
+            \App\Modules\HR\Policies\PerformanceReviewPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\Training::class,
+            \App\Modules\HR\Policies\TrainingPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\TrainingCourse::class,
+            \App\Modules\HR\Policies\TrainingCoursePolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\TrainingAssignment::class,
+            \App\Modules\HR\Policies\TrainingAssignmentPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\TrainingEnrollment::class,
+            \App\Modules\HR\Policies\TrainingEnrollmentPolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\HR\Models\EmployeeDocument::class,
+            \App\Modules\HR\Policies\EmployeeDocumentPolicy::class
+        );
+
         // Register observers
         \App\Modules\CRM\Models\Lead::observe(\App\Observers\LeadObserver::class);
         \App\Modules\CRM\Models\Deal::observe(\App\Modules\CRM\Observers\DealObserver::class);

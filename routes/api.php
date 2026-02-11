@@ -717,6 +717,134 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::post('/{timesheet}/approve', [\App\Modules\ERP\Http\Controllers\TimesheetController::class, 'approve']);
         Route::post('/{timesheet}/reject', [\App\Modules\ERP\Http\Controllers\TimesheetController::class, 'reject']);
     });
+
+    Route::prefix('hr/departments')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\DepartmentController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\DepartmentController::class, 'store']);
+        Route::get('/{department}', [\App\Modules\HR\Http\Controllers\DepartmentController::class, 'show']);
+        Route::put('/{department}', [\App\Modules\HR\Http\Controllers\DepartmentController::class, 'update']);
+        Route::patch('/{department}', [\App\Modules\HR\Http\Controllers\DepartmentController::class, 'update']);
+        Route::delete('/{department}', [\App\Modules\HR\Http\Controllers\DepartmentController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/positions')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\PositionController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\PositionController::class, 'store']);
+        Route::get('/{position}', [\App\Modules\HR\Http\Controllers\PositionController::class, 'show']);
+        Route::put('/{position}', [\App\Modules\HR\Http\Controllers\PositionController::class, 'update']);
+        Route::patch('/{position}', [\App\Modules\HR\Http\Controllers\PositionController::class, 'update']);
+        Route::delete('/{position}', [\App\Modules\HR\Http\Controllers\PositionController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/employees')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\EmployeeController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\EmployeeController::class, 'store']);
+        Route::get('/{employee}', [\App\Modules\HR\Http\Controllers\EmployeeController::class, 'show']);
+        Route::put('/{employee}', [\App\Modules\HR\Http\Controllers\EmployeeController::class, 'update']);
+        Route::patch('/{employee}', [\App\Modules\HR\Http\Controllers\EmployeeController::class, 'update']);
+        Route::delete('/{employee}', [\App\Modules\HR\Http\Controllers\EmployeeController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/contracts')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\ContractController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\ContractController::class, 'store']);
+        Route::get('/{contract}', [\App\Modules\HR\Http\Controllers\ContractController::class, 'show']);
+        Route::put('/{contract}', [\App\Modules\HR\Http\Controllers\ContractController::class, 'update']);
+        Route::patch('/{contract}', [\App\Modules\HR\Http\Controllers\ContractController::class, 'update']);
+        Route::delete('/{contract}', [\App\Modules\HR\Http\Controllers\ContractController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/employment-contracts')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\EmploymentContractController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\EmploymentContractController::class, 'store']);
+        Route::get('/{employmentContract}', [\App\Modules\HR\Http\Controllers\EmploymentContractController::class, 'show']);
+        Route::put('/{employmentContract}', [\App\Modules\HR\Http\Controllers\EmploymentContractController::class, 'update']);
+        Route::patch('/{employmentContract}', [\App\Modules\HR\Http\Controllers\EmploymentContractController::class, 'update']);
+        Route::delete('/{employmentContract}', [\App\Modules\HR\Http\Controllers\EmploymentContractController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/attendances')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\AttendanceController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\AttendanceController::class, 'store']);
+        Route::get('/{attendance}', [\App\Modules\HR\Http\Controllers\AttendanceController::class, 'show']);
+        Route::put('/{attendance}', [\App\Modules\HR\Http\Controllers\AttendanceController::class, 'update']);
+        Route::patch('/{attendance}', [\App\Modules\HR\Http\Controllers\AttendanceController::class, 'update']);
+        Route::delete('/{attendance}', [\App\Modules\HR\Http\Controllers\AttendanceController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/attendance-records')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\AttendanceRecordController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\AttendanceRecordController::class, 'store']);
+        Route::get('/{attendanceRecord}', [\App\Modules\HR\Http\Controllers\AttendanceRecordController::class, 'show']);
+        Route::put('/{attendanceRecord}', [\App\Modules\HR\Http\Controllers\AttendanceRecordController::class, 'update']);
+        Route::patch('/{attendanceRecord}', [\App\Modules\HR\Http\Controllers\AttendanceRecordController::class, 'update']);
+        Route::delete('/{attendanceRecord}', [\App\Modules\HR\Http\Controllers\AttendanceRecordController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/leave-requests')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\LeaveRequestController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\LeaveRequestController::class, 'store']);
+        Route::get('/{leaveRequest}', [\App\Modules\HR\Http\Controllers\LeaveRequestController::class, 'show']);
+        Route::put('/{leaveRequest}', [\App\Modules\HR\Http\Controllers\LeaveRequestController::class, 'update']);
+        Route::patch('/{leaveRequest}', [\App\Modules\HR\Http\Controllers\LeaveRequestController::class, 'update']);
+        Route::delete('/{leaveRequest}', [\App\Modules\HR\Http\Controllers\LeaveRequestController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/payrolls')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\PayrollController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\PayrollController::class, 'store']);
+        Route::get('/{payroll}', [\App\Modules\HR\Http\Controllers\PayrollController::class, 'show']);
+        Route::put('/{payroll}', [\App\Modules\HR\Http\Controllers\PayrollController::class, 'update']);
+        Route::patch('/{payroll}', [\App\Modules\HR\Http\Controllers\PayrollController::class, 'update']);
+        Route::delete('/{payroll}', [\App\Modules\HR\Http\Controllers\PayrollController::class, 'destroy']);
+        Route::post('/{payroll}/approve', [\App\Modules\HR\Http\Controllers\PayrollController::class, 'approve']);
+        Route::post('/{payroll}/mark-paid', [\App\Modules\HR\Http\Controllers\PayrollController::class, 'markPaid']);
+    });
+
+    Route::prefix('hr/recruitments')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\RecruitmentController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\RecruitmentController::class, 'store']);
+        Route::get('/{recruitment}', [\App\Modules\HR\Http\Controllers\RecruitmentController::class, 'show']);
+        Route::put('/{recruitment}', [\App\Modules\HR\Http\Controllers\RecruitmentController::class, 'update']);
+        Route::patch('/{recruitment}', [\App\Modules\HR\Http\Controllers\RecruitmentController::class, 'update']);
+        Route::delete('/{recruitment}', [\App\Modules\HR\Http\Controllers\RecruitmentController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/performance-reviews')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\PerformanceReviewController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\PerformanceReviewController::class, 'store']);
+        Route::get('/{performanceReview}', [\App\Modules\HR\Http\Controllers\PerformanceReviewController::class, 'show']);
+        Route::put('/{performanceReview}', [\App\Modules\HR\Http\Controllers\PerformanceReviewController::class, 'update']);
+        Route::patch('/{performanceReview}', [\App\Modules\HR\Http\Controllers\PerformanceReviewController::class, 'update']);
+        Route::delete('/{performanceReview}', [\App\Modules\HR\Http\Controllers\PerformanceReviewController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/trainings')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\TrainingController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\TrainingController::class, 'store']);
+        Route::get('/{training}', [\App\Modules\HR\Http\Controllers\TrainingController::class, 'show']);
+        Route::put('/{training}', [\App\Modules\HR\Http\Controllers\TrainingController::class, 'update']);
+        Route::patch('/{training}', [\App\Modules\HR\Http\Controllers\TrainingController::class, 'update']);
+        Route::delete('/{training}', [\App\Modules\HR\Http\Controllers\TrainingController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/training-assignments')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\TrainingAssignmentController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\TrainingAssignmentController::class, 'store']);
+        Route::get('/{trainingAssignment}', [\App\Modules\HR\Http\Controllers\TrainingAssignmentController::class, 'show']);
+        Route::put('/{trainingAssignment}', [\App\Modules\HR\Http\Controllers\TrainingAssignmentController::class, 'update']);
+        Route::patch('/{trainingAssignment}', [\App\Modules\HR\Http\Controllers\TrainingAssignmentController::class, 'update']);
+        Route::delete('/{trainingAssignment}', [\App\Modules\HR\Http\Controllers\TrainingAssignmentController::class, 'destroy']);
+    });
+
+    Route::prefix('hr/employee-documents')->group(function () {
+        Route::get('/', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'index']);
+        Route::post('/', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'store']);
+        Route::get('/{employeeDocument}', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'show']);
+        Route::put('/{employeeDocument}', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'update']);
+        Route::patch('/{employeeDocument}', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'update']);
+        Route::delete('/{employeeDocument}', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'destroy']);
+    });
 });
 
 Route::prefix('platform')->group(function () {
