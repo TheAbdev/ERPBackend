@@ -2,6 +2,8 @@
 
 namespace App\Modules\ERP\Http\Controllers;
 
+use App\Core\Models\Tenant;
+use App\Core\Services\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Modules\ERP\Http\Requests\PostJournalEntryRequest;
 use App\Modules\ERP\Http\Requests\StoreJournalEntryRequest;
@@ -184,6 +186,16 @@ class JournalEntryController extends Controller
     public function post(PostJournalEntryRequest $request, JournalEntry $journalEntry): JsonResponse
     {
         $this->authorize('update', $journalEntry);
+
+        // Ensure AccountingService uses the same tenant as the journal entry.
+        $tenantContext = app(TenantContext::class);
+        if (! $tenantContext->hasTenant() || (int) $tenantContext->getTenantId() !== (int) $journalEntry->tenant_id) {
+            $tenant = Tenant::find($journalEntry->tenant_id);
+            if ($tenant) {
+                $tenantContext->setTenant($tenant);
+                $request->attributes->set('tenant_id', $tenant->id);
+            }
+        }
 
         try {
             $this->accountingService->postJournalEntry($journalEntry, $request->user()->id);

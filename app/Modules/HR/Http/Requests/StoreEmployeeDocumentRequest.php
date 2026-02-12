@@ -23,6 +23,7 @@ class StoreEmployeeDocumentRequest extends FormRequest
             ],
             'name' => ['required', 'string', 'max:255'],
             'type' => ['nullable', 'string', 'max:100'],
+            'file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,gif,webp', 'max:10240'],
             'file_path' => ['nullable', 'string', 'max:500'],
             'issued_at' => ['nullable', 'date'],
             'expires_at' => ['nullable', 'date', 'after_or_equal:issued_at'],

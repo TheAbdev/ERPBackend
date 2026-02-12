@@ -14,15 +14,26 @@ class UpdateEmployeeDocumentRequest extends FormRequest
 
     public function rules(): array
     {
+        $tenantId = $this->user()->tenant_id;
+
         return [
-            'employee_id' => ['sometimes', Rule::exists('hr_employees', 'id')],
+            'employee_id' => [
+                'sometimes',
+                Rule::exists('hr_employees', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)),
+            ],
             'name' => ['sometimes', 'string', 'max:255'],
             'type' => ['nullable', 'string', 'max:100'],
+            'file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,gif,webp', 'max:10240'],
             'file_path' => ['nullable', 'string', 'max:500'],
             'issued_at' => ['nullable', 'date'],
             'expires_at' => ['nullable', 'date', 'after_or_equal:issued_at'],
             'notes' => ['nullable', 'string'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['tenant_id' => $this->user()->tenant_id]);
     }
 }
 

@@ -841,6 +841,7 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         Route::get('/', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'index']);
         Route::post('/', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'store']);
         Route::get('/{employeeDocument}', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'show']);
+        Route::get('/{employeeDocument}/download', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'download']);
         Route::put('/{employeeDocument}', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'update']);
         Route::patch('/{employeeDocument}', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'update']);
         Route::delete('/{employeeDocument}', [\App\Modules\HR\Http\Controllers\EmployeeDocumentController::class, 'destroy']);

@@ -41,6 +41,9 @@ class LeaveRequestController extends Controller
         $this->authorize('create', LeaveRequest::class);
 
         $leaveRequest = LeaveRequest::create($request->validated());
+        $leaveRequest->approved_by = $request->user()->id;
+        $leaveRequest->approved_at = now();
+        $leaveRequest->save();
 
         event(new EntityCreated($leaveRequest, $request->user()->id));
 

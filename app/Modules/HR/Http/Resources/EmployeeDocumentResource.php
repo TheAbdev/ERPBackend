@@ -11,6 +11,7 @@ class EmployeeDocumentResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'employee_id' => $this->employee_id,
             'employee' => $this->employee ? [
                 'id' => $this->employee->id,
                 'name' => trim($this->employee->first_name . ' ' . $this->employee->last_name),

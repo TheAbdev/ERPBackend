@@ -27,8 +27,8 @@ class StoreLeaveRequest extends FormRequest
             'total_days' => ['nullable', 'numeric', 'min:0'],
             'status' => ['nullable', 'string', 'max:50'],
             'reason' => ['nullable', 'string'],
-            'approved_by' => ['nullable', Rule::exists('users', 'id')],
-            'approved_at' => ['nullable', 'date'],
+          //  'approved_by' => ['nullable', Rule::exists('users', 'id')],
+          //  'approved_at' => ['nullable', 'date'],
         ];
     }
 

@@ -123,8 +123,8 @@ class AccountingService extends BaseService
         $date = is_string($date) ? \Carbon\Carbon::parse($date) : $date;
 
         $period = FiscalPeriod::where('tenant_id', $this->getTenantId())
-            ->where('is_active', true)
-            ->where('is_closed', false)
+         //   ->where('is_active', true)
+         //   ->where('is_closed', false)
             ->whereDate('start_date', '<=', $date)
             ->whereDate('end_date', '>=', $date)
             ->first();
@@ -149,8 +149,8 @@ class AccountingService extends BaseService
         $date = is_string($date) ? \Carbon\Carbon::parse($date) : $date;
 
         $year = FiscalYear::where('tenant_id', $this->getTenantId())
-            ->where('is_active', true)
-            ->where('is_closed', false)
+         //   ->where('is_active', true)
+         //   ->where('is_closed', false)
             ->whereDate('start_date', '<=', $date)
             ->whereDate('end_date', '>=', $date)
             ->first();

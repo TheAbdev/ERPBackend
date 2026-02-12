@@ -13,6 +13,8 @@ use App\Modules\HR\Models\EmployeeDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EmployeeDocumentController extends Controller
 {
@@ -36,7 +38,14 @@ class EmployeeDocumentController extends Controller
     {
         $this->authorize('create', EmployeeDocument::class);
 
-        $document = EmployeeDocument::create($request->validated());
+        $payload = $request->validated();
+
+        if ($request->hasFile('file')) {
+            $path = $request->file('file')->store('hr/employee-documents', 'public');
+            $payload['file_path'] = '/storage/' . $path;
+        }
+
+        $document = EmployeeDocument::create($payload);
 
         event(new EntityCreated($document, $request->user()->id));
 
@@ -55,11 +64,54 @@ class EmployeeDocumentController extends Controller
         ]);
     }
 
+    public function download(EmployeeDocument $employeeDocument): StreamedResponse
+    {
+        $this->authorize('view', $employeeDocument);
+
+        if ((int) request()->user()->tenant_id !== (int) $employeeDocument->tenant_id) {
+            abort(403);
+        }
+
+        $path = $employeeDocument->file_path;
+        if (! $path) {
+            abort(404, 'File not found.');
+        }
+
+        $publicRelative = ltrim(str_replace('/storage/', '', $path), '/');
+        if ($publicRelative === '' || ! Storage::disk('public')->exists($publicRelative)) {
+            abort(404, 'File not found.');
+        }
+
+        $ext = pathinfo($publicRelative, PATHINFO_EXTENSION);
+        $safeName = trim((string) $employeeDocument->name);
+        $downloadName = $safeName !== '' ? $safeName : ('employee-document-' . $employeeDocument->id);
+        if ($ext) {
+            $downloadName .= '.' . $ext;
+        }
+
+        return Storage::disk('public')->download($publicRelative, $downloadName);
+    }
+
     public function update(UpdateEmployeeDocumentRequest $request, EmployeeDocument $employeeDocument): JsonResponse
     {
         $this->authorize('update', $employeeDocument);
 
-        $employeeDocument->update($request->validated());
+        $payload = $request->validated();
+
+        if ($request->hasFile('file')) {
+            $oldPath = $employeeDocument->file_path;
+            if ($oldPath) {
+                $publicRelative = ltrim(str_replace('/storage/', '', $oldPath), '/');
+                if ($publicRelative !== '' && Storage::disk('public')->exists($publicRelative)) {
+                    Storage::disk('public')->delete($publicRelative);
+                }
+            }
+
+            $path = $request->file('file')->store('hr/employee-documents', 'public');
+            $payload['file_path'] = '/storage/' . $path;
+        }
+
+        $employeeDocument->update($payload);
 
         event(new EntityUpdated($employeeDocument->fresh(), $request->user()->id));
 
@@ -74,6 +126,14 @@ class EmployeeDocumentController extends Controller
         $this->authorize('delete', $employeeDocument);
 
         event(new EntityDeleted($employeeDocument, request()->user()->id));
+
+        $oldPath = $employeeDocument->file_path;
+        if ($oldPath) {
+            $publicRelative = ltrim(str_replace('/storage/', '', $oldPath), '/');
+            if ($publicRelative !== '' && Storage::disk('public')->exists($publicRelative)) {
+                Storage::disk('public')->delete($publicRelative);
+            }
+        }
 
         $employeeDocument->delete();
 
