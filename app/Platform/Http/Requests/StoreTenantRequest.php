@@ -35,6 +35,10 @@ class StoreTenantRequest extends FormRequest
             'owner_name' => ['nullable', 'required_with:owner_email,owner_password', 'string', 'max:255'],
             'owner_password' => ['nullable', 'required_with:owner_name,owner_email', 'string', 'min:8'],
             'settings' => ['nullable', 'array'],
+            'settings.modules' => ['nullable', 'array'],
+            'settings.modules.erp' => ['nullable', 'boolean'],
+            'settings.modules.crm' => ['nullable', 'boolean'],
+            'settings.modules.hr' => ['nullable', 'boolean'],
         ];
     }
 
@@ -57,4 +61,3 @@ class StoreTenantRequest extends FormRequest
         ];
     }
 }
-

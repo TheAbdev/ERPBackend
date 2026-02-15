@@ -31,6 +31,10 @@ class UpdateTenantRequest extends FormRequest
             'domain' => ['sometimes', 'nullable', 'string', 'max:255', Rule::unique('tenants', 'domain')->ignore($tenantId)],
             'status' => ['sometimes', 'nullable', 'string', Rule::in(['active', 'suspended', 'inactive'])],
             'settings' => ['sometimes', 'nullable', 'array'],
+            'settings.modules' => ['sometimes', 'nullable', 'array'],
+            'settings.modules.erp' => ['sometimes', 'nullable', 'boolean'],
+            'settings.modules.crm' => ['sometimes', 'nullable', 'boolean'],
+            'settings.modules.hr' => ['sometimes', 'nullable', 'boolean'],
         ];
     }
 
@@ -50,4 +54,3 @@ class UpdateTenantRequest extends FormRequest
         ];
     }
 }
-

@@ -15,6 +15,7 @@ class UpdateEmployeeRequest extends FormRequest
     public function rules(): array
     {
         $tenantId = $this->user()->tenant_id;
+        $employeeId = $this->route('employee')?->id ?? $this->route('employee');
 
         return [
             'user_id' => ['nullable', Rule::exists('users', 'id')],
@@ -34,6 +35,14 @@ class UpdateEmployeeRequest extends FormRequest
             'last_name' => ['sometimes', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
+            'biotime_emp_code' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('hr_employees', 'biotime_emp_code')
+                    ->where(fn ($query) => $query->where('tenant_id', $tenantId))
+                    ->ignore($employeeId),
+            ],
             'hire_date' => ['nullable', 'date'],
             'status' => ['nullable', 'string', 'max:50'],
             'employment_type' => ['nullable', 'string', 'max:50'],

@@ -2,6 +2,7 @@
 
 namespace App\Platform\Services;
 
+use App\Core\Models\Permission;
 use App\Core\Models\Role;
 use App\Core\Models\Tenant;
 use App\Mail\WelcomeUserMail;
@@ -83,6 +84,9 @@ class TenantManagementService
     {
         return DB::transaction(function () use ($tenant, $data) {
             $tenant->update($data);
+            if (array_key_exists('settings', $data)) {
+                $this->syncTenantOwnerPermissions($tenant->fresh());
+            }
             return $tenant->fresh(['owner']);
         });
     }
@@ -146,16 +150,7 @@ class TenantManagementService
                 ]);
             }
 
-            // Always sync all permissions to super_admin role (tenant-level permissions only)
-            // This ensures new permissions are automatically added to existing super_admin roles
-            // Get all permissions that are not platform-level (exclude platform.manage, core.tenants.*, and core.audit_logs.*)
-            $allPermissions = \App\Core\Models\Permission::where('slug', '!=', 'platform.manage')
-                ->where('slug', 'not like', 'core.tenants.%')
-                ->where('slug', 'not like', 'core.audit_logs.%')
-                ->get();
-            if ($allPermissions->isNotEmpty()) {
-                $superAdminRole->permissions()->sync($allPermissions->pluck('id')->toArray());
-            }
+            $this->syncTenantOwnerPermissions($tenant, $superAdminRole);
 
             // Assign Super Admin role if not already assigned
             if (! $user->hasRole('super_admin')) {
@@ -179,6 +174,96 @@ class TenantManagementService
 
             return $tenant->fresh(['owner']);
         });
+    }
+
+    /**
+     * Sync tenant owner role permissions based on tenant module settings.
+     *
+     * @param  Tenant  $tenant
+     * @param  Role|null  $role
+     * @return void
+     */
+    protected function syncTenantOwnerPermissions(Tenant $tenant, ?Role $role = null): void
+    {
+        $superAdminRole = $role ?: Role::where('tenant_id', $tenant->id)
+            ->where('slug', 'super_admin')
+            ->first();
+
+        if (! $superAdminRole) {
+            return;
+        }
+
+        $permissionIds = $this->resolveTenantOwnerPermissionIds($tenant);
+        $superAdminRole->permissions()->sync($permissionIds);
+    }
+
+    /**
+     * Resolve permission IDs for tenant owner based on module selections.
+     *
+     * @param  Tenant  $tenant
+     * @return array<int, int>
+     */
+    protected function resolveTenantOwnerPermissionIds(Tenant $tenant): array
+    {
+        $modules = (array) data_get($tenant->settings ?? [], 'modules', []);
+        $erpEnabled = (bool) data_get($modules, 'erp', false);
+        $crmEnabled = (bool) data_get($modules, 'crm', false);
+        $hrEnabled = (bool) data_get($modules, 'hr', false);
+
+        $permissionIds = collect();
+
+        // System permissions are always available (exclude platform and tenant management).
+        $permissionIds = $permissionIds->merge(
+            Permission::where('slug', 'like', 'core.%')
+                ->where('slug', 'not like', 'core.tenants.%')
+                ->pluck('id')
+        );
+
+        if ($erpEnabled) {
+            $permissionIds = $permissionIds->merge(
+                $this->getPermissionIdsByPrefixes([
+                    'erp.',
+                    'ecommerce.',
+                    'crm.contacts.',
+                ])
+            );
+        }
+
+        if ($crmEnabled) {
+            $permissionIds = $permissionIds->merge(
+                $this->getPermissionIdsByPrefixes([
+                    'crm.',
+                ])
+            );
+        }
+
+        if ($hrEnabled) {
+            $permissionIds = $permissionIds->merge(
+                $this->getPermissionIdsByPrefixes([
+                    'hr.',
+                    'erp.accounting.journals.',
+                    'erp.fiscal-years.',
+                    'erp.fiscal-periods.',
+                ])
+            );
+        }
+
+        return $permissionIds->unique()->values()->all();
+    }
+
+    /**
+     * Get permission IDs by slug prefixes.
+     *
+     * @param  array<int, string>  $prefixes
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    protected function getPermissionIdsByPrefixes(array $prefixes)
+    {
+        return Permission::where(function ($query) use ($prefixes) {
+            foreach ($prefixes as $prefix) {
+                $query->orWhere('slug', 'like', $prefix . '%');
+            }
+        })->pluck('id');
     }
 
     /**
@@ -569,4 +654,3 @@ class TenantManagementService
         }
     }
 }
-

@@ -21,6 +21,7 @@ class EmployeeResource extends JsonResource
             'full_name' => trim($this->first_name . ' ' . $this->last_name),
             'email' => $this->email,
             'phone' => $this->phone,
+            'biotime_emp_code' => $this->biotime_emp_code,
             'hire_date' => $this->hire_date?->toDateString(),
             'status' => $this->status,
             'employment_type' => $this->employment_type,

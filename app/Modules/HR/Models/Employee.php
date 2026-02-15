@@ -19,6 +19,7 @@ class Employee extends HrBaseModel
         'last_name',
         'email',
         'phone',
+        'biotime_emp_code',
         'hire_date',
         'status',
         'employment_type',

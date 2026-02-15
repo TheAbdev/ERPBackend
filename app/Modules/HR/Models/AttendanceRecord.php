@@ -17,6 +17,9 @@ class AttendanceRecord extends HrBaseModel
         'hours_worked',
         'status',
         'notes',
+        'source',
+        'external_id',
+        'raw_payload',
     ];
 
     protected function casts(): array
@@ -26,6 +29,7 @@ class AttendanceRecord extends HrBaseModel
             'check_in' => 'datetime',
             'check_out' => 'datetime',
             'hours_worked' => 'decimal:2',
+            'raw_payload' => 'array',
         ];
     }
 

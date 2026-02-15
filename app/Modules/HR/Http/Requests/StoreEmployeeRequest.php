@@ -34,6 +34,12 @@ class StoreEmployeeRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
+            'biotime_emp_code' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('hr_employees', 'biotime_emp_code')->where(fn ($query) => $query->where('tenant_id', $tenantId)),
+            ],
             'hire_date' => ['nullable', 'date'],
             'status' => ['nullable', 'string', 'max:50'],
             'employment_type' => ['nullable', 'string', 'max:50'],
