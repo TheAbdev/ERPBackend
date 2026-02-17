@@ -69,6 +69,7 @@ return [
             ],
         ],
 
+
         // ERP Inventory Management Group
         'erp_inventory_management' => [
             'name' => 'Inventory Management',

@@ -80,8 +80,8 @@ class AuthController extends Controller
             ]);
         }
 
-        // Load user with tenant and roles with permissions to check permissions
-        $user->load('tenant', 'roles.permissions');
+        // Load user with tenant (including owner) and roles with permissions
+        $user->load('tenant.owner', 'roles.permissions');
 
         // Check if user is Site Owner (has site_owner role or platform.manage permission)
         $isSiteOwner = $user->hasRole('site_owner') || $user->hasPermission('platform.manage');
@@ -231,7 +231,7 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user()->load('tenant', 'roles.permissions');
+        $user = $request->user()->load('tenant.owner', 'roles.permissions');
 
         return response()->json([
             'user' => $user,
@@ -400,4 +400,3 @@ class AuthController extends Controller
         ], 400);
     }
 }
-

@@ -64,6 +64,12 @@ Schedule::command('erp:check-reorder-rules')
     ->withoutOverlapping()
     ->runInBackground();
 
+Schedule::command('hr:sync-zkbiotime-attendance')
+    ->name('hr-sync-zkbiotime-attendance')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground();
+
 Artisan::command('hr:sync-zkbiotime-attendance {--tenant= : Tenant ID} {--from= : Start datetime} {--to= : End datetime} {--page-size= : Page size}', function () {
     $tenantId = $this->option('tenant');
     $from = $this->option('from') ? Carbon::parse($this->option('from')) : null;

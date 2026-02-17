@@ -225,6 +225,7 @@ class TenantManagementService
                     'erp.',
                     'ecommerce.',
                     'crm.contacts.',
+
                 ])
             );
         }
@@ -233,6 +234,7 @@ class TenantManagementService
             $permissionIds = $permissionIds->merge(
                 $this->getPermissionIdsByPrefixes([
                     'crm.',
+                    'erp.accounting.journals.'
                 ])
             );
         }
@@ -244,6 +246,8 @@ class TenantManagementService
                     'erp.accounting.journals.',
                     'erp.fiscal-years.',
                     'erp.fiscal-periods.',
+                    'erp.accounting.journals.',
+                    'erp.accounting.accounts.',
                 ])
             );
         }

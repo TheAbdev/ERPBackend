@@ -17,16 +17,21 @@ class PermissionSeeder extends Seeder
         foreach ($permissions as $permissionSlug) {
             // Parse permission: {module}.{resource}.{action}
             $parts = explode('.', $permissionSlug);
-            
-            if (count($parts) !== 3) {
+
+            if (count($parts) < 3) {
                 continue;
             }
 
-            [$module, $resource, $action] = $parts;
+            $module = $parts[0];
+            $action = $parts[count($parts) - 1];
+            $resource = implode('.', array_slice($parts, 1, -1));
+
+            $resourceLabel = ucwords(str_replace(['.', '_', '-'], ' ', $resource));
+            $actionLabel = ucwords(str_replace(['_', '-'], ' ', $action));
 
             // Generate human-readable name
-            $name = ucfirst($module) . ' - ' . ucfirst($resource) . ' - ' . ucfirst($action);
-            
+            $name = ucfirst($module) . ' - ' . $resourceLabel . ' - ' . $actionLabel;
+
             // Generate description
             $description = "Allows {$action} action on {$resource} resource in {$module} module";
 
