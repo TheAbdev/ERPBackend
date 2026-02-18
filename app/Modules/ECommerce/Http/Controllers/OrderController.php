@@ -17,6 +17,7 @@ use App\Modules\ERP\Models\PaymentGateway;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
@@ -128,12 +129,15 @@ class OrderController extends Controller
             $customerId = $customer->id;
         }
 
+        $guestOrderToken = Str::random(64);
+
         $order = Order::create([
             'tenant_id' => $store->tenant_id,
             'store_id' => $store->id,
             'order_number' => Order::generateOrderNumber(),
             'customer_id' => $customerId,
             'session_id' => $cart->session_id,
+            'guest_order_token' => $guestOrderToken,
             'status' => 'pending',
             'payment_status' => 'pending',
             'subtotal' => $cart->subtotal,
@@ -178,6 +182,7 @@ class OrderController extends Controller
             'message' => 'Order created successfully.',
             'data' => $order->load(['items.product', 'customer']),
             'sales_order_id' => $salesOrder->id,
+            'guest_order_token' => $guestOrderToken,
         ], 201);
     }
 
@@ -211,17 +216,22 @@ class OrderController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
+        $guestToken = $request->header('X-Guest-Order-Token') ?? $request->input('guest_order_token');
         $sessionId = $request->header('X-Session-ID') ?? $request->input('session_id');
-        if (!$sessionId) {
+        if (!$guestToken && !$sessionId) {
             return response()->json([
-                'message' => 'Session ID is required.',
+                'message' => 'Guest token or session ID is required.',
             ], 400);
         }
 
         $order = Order::withoutGlobalScopes()
             ->where('store_id', $store->id)
-            ->where('session_id', $sessionId)
             ->where('id', $orderId)
+            ->when($guestToken, function ($query) use ($guestToken) {
+                $query->where('guest_order_token', $guestToken);
+            }, function ($query) use ($sessionId) {
+                $query->where('session_id', $sessionId);
+            })
             ->firstOrFail();
 
         return response()->json([
@@ -243,16 +253,21 @@ class OrderController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
+        $guestToken = $request->header('X-Guest-Order-Token') ?? $request->input('guest_order_token');
         $sessionId = $request->header('X-Session-ID') ?? $request->input('session_id');
-        if (!$sessionId) {
+        if (!$guestToken && !$sessionId) {
             return response()->json([
-                'message' => 'Session ID is required.',
+                'message' => 'Guest token or session ID is required.',
             ], 400);
         }
 
         $orders = Order::withoutGlobalScopes()
             ->where('store_id', $store->id)
-            ->where('session_id', $sessionId)
+            ->when($guestToken, function ($query) use ($guestToken) {
+                $query->where('guest_order_token', $guestToken);
+            }, function ($query) use ($sessionId) {
+                $query->where('session_id', $sessionId);
+            })
             ->with(['items.product', 'customer', 'store'])
             ->latest()
             ->get();
@@ -383,4 +398,3 @@ class OrderController extends Controller
         }
     }
 }
-

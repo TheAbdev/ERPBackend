@@ -26,6 +26,7 @@ class Order extends ECommerceBaseModel
         'order_number',
         'customer_id',
         'session_id',
+        'guest_order_token',
         'status',
         'payment_status',
         'subtotal',
@@ -128,6 +129,5 @@ class Order extends ECommerceBaseModel
         return $prefix . $date . str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
 }
-
 
 
