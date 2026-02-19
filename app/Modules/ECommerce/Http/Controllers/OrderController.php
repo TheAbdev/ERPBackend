@@ -86,6 +86,7 @@ class OrderController extends Controller
             'payment_method' => ['required', 'string'],
             'shipping_method' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
+            'guest_order_token' => ['nullable', 'string', 'max:128'],
         ]);
 
         // Remove tenant scope for public storefront access
@@ -129,7 +130,10 @@ class OrderController extends Controller
             $customerId = $customer->id;
         }
 
-        $guestOrderToken = Str::random(64);
+        $guestOrderToken = $validated['guest_order_token'] ?? null;
+        if (!$guestOrderToken) {
+            $guestOrderToken = Str::random(64);
+        }
 
         $order = Order::create([
             'tenant_id' => $store->tenant_id,
