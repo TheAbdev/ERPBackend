@@ -38,7 +38,6 @@ Route::prefix('storefront')->group(function () {
     Route::get('/{slug}/{pageSlug}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'getBySlug']);
 });
 
-
 Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -705,6 +704,36 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
         });
     });
 
+    Route::prefix('website')->group(function () {
+        Route::prefix('templates')->group(function () {
+            Route::get('/', [\App\Modules\Website\Http\Controllers\TemplateController::class, 'index']);
+            Route::get('/{template}', [\App\Modules\Website\Http\Controllers\TemplateController::class, 'show']);
+            Route::post('/', [\App\Modules\Website\Http\Controllers\TemplateController::class, 'create']);
+            Route::post('/{template}/copy', [\App\Modules\Website\Http\Controllers\TemplateController::class, 'copy']);
+            Route::put('/{template}', [\App\Modules\Website\Http\Controllers\TemplateController::class, 'update']);
+            Route::post('/apply', [\App\Modules\Website\Http\Controllers\TemplateController::class, 'applyToSite']);
+            Route::delete('/{template}', [\App\Modules\Website\Http\Controllers\TemplateController::class, 'destroy']);
+        });
+
+        Route::prefix('sites')->group(function () {
+            Route::get('/', [\App\Modules\Website\Http\Controllers\SiteController::class, 'index']);
+            Route::get('/current', [\App\Modules\Website\Http\Controllers\SiteController::class, 'getCurrentSite']);
+            Route::post('/', [\App\Modules\Website\Http\Controllers\SiteController::class, 'store']);
+            Route::get('/{site}', [\App\Modules\Website\Http\Controllers\SiteController::class, 'show']);
+            Route::put('/{site}', [\App\Modules\Website\Http\Controllers\SiteController::class, 'update']);
+            Route::post('/{site}/apply-template', [\App\Modules\Website\Http\Controllers\SiteController::class, 'applyTemplate']);
+            Route::delete('/{site}', [\App\Modules\Website\Http\Controllers\SiteController::class, 'destroy']);
+        });
+
+        Route::prefix('pages')->group(function () {
+            Route::get('/', [\App\Modules\Website\Http\Controllers\PageController::class, 'index']);
+            Route::post('/', [\App\Modules\Website\Http\Controllers\PageController::class, 'store']);
+            Route::get('/{page}', [\App\Modules\Website\Http\Controllers\PageController::class, 'show']);
+            Route::put('/{page}', [\App\Modules\Website\Http\Controllers\PageController::class, 'update']);
+            Route::delete('/{page}', [\App\Modules\Website\Http\Controllers\PageController::class, 'destroy']);
+        });
+    });
+
 
     Route::prefix('erp/timesheets')->group(function () {
         Route::get('/', [\App\Modules\ERP\Http\Controllers\TimesheetController::class, 'index']);
@@ -917,5 +946,10 @@ Route::prefix('platform')->group(function () {
     });
 });
 
-Route::get('/health', [\App\Http\Controllers\HealthCheckController::class, 'index']);
+// Public Website Routes (must be after protected routes to avoid route conflicts)
+Route::prefix('website')->group(function () {
+    Route::get('/{slug}', [\App\Modules\Website\Http\Controllers\PublicWebsiteController::class, 'getSite']);
+    Route::get('/{slug}/pages/{pageSlug}', [\App\Modules\Website\Http\Controllers\PublicWebsiteController::class, 'getPage']);
+});
 
+Route::get('/health', [\App\Http\Controllers\HealthCheckController::class, 'index']);

@@ -490,6 +490,31 @@ return [
         'ecommerce.content_blocks.create',
         'ecommerce.content_blocks.update',
         'ecommerce.content_blocks.delete',
+
+        // Website module permissions
+        'website.sites.view',
+        'website.sites.viewAny',
+        'website.sites.create',
+        'website.sites.update',
+        'website.sites.delete',
+
+        'website.pages.view',
+        'website.pages.viewAny',
+        'website.pages.create',
+        'website.pages.update',
+        'website.pages.delete',
+
+        'website.templates.view',
+        'website.templates.viewAny',
+        'website.templates.create',
+        'website.templates.update',
+        'website.templates.delete',
+
+        'website.content_blocks.view',
+        'website.content_blocks.viewAny',
+        'website.content_blocks.create',
+        'website.content_blocks.update',
+        'website.content_blocks.delete',
     ],
 
     /*
@@ -581,6 +606,11 @@ return [
             'pages',
             'content_blocks',
         ],
+        'website' => [
+            'sites',
+            'pages',
+            'templates',
+            'content_blocks',
+        ],
     ],
 ];
-

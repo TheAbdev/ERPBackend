@@ -209,6 +209,7 @@ class TenantManagementService
         $erpEnabled = (bool) data_get($modules, 'erp', false);
         $crmEnabled = (bool) data_get($modules, 'crm', false);
         $hrEnabled = (bool) data_get($modules, 'hr', false);
+        $websiteEnabled = (bool) data_get($modules, 'website', false);
 
         $permissionIds = collect();
 
@@ -248,6 +249,14 @@ class TenantManagementService
                     'erp.fiscal-periods.',
                     'erp.accounting.journals.',
                     'erp.accounting.accounts.',
+                ])
+            );
+        }
+
+        if ($websiteEnabled) {
+            $permissionIds = $permissionIds->merge(
+                $this->getPermissionIdsByPrefixes([
+                    'website.',
                 ])
             );
         }

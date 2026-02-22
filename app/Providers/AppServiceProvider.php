@@ -36,6 +36,25 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register Route Model Binding for Website module
+        \Illuminate\Support\Facades\Route::bind('site', function ($value) {
+            return \App\Modules\Website\Models\WebsiteSite::where('id', $value)
+                ->orWhere('slug', $value)
+                ->firstOrFail();
+        });
+
+        \Illuminate\Support\Facades\Route::bind('page', function ($value) {
+            return \App\Modules\Website\Models\WebsitePage::where('id', $value)
+                ->orWhere('slug', $value)
+                ->firstOrFail();
+        });
+
+        \Illuminate\Support\Facades\Route::bind('template', function ($value) {
+            return \App\Modules\Website\Models\WebsiteTemplate::where('id', $value)
+                ->orWhere('slug', $value)
+                ->firstOrFail();
+        });
+
         // Register morph map for polymorphic relationships
         \Illuminate\Database\Eloquent\Relations\Relation::enforceMorphMap([
             'user' => \App\Models\User::class,
@@ -427,6 +446,17 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Gate::policy(
             \App\Modules\HR\Models\EmployeeDocument::class,
             \App\Modules\HR\Policies\EmployeeDocumentPolicy::class
+        );
+
+        // Register Website policies
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\Website\Models\WebsiteSite::class,
+            \App\Modules\Website\Policies\SitePolicy::class
+        );
+
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Modules\Website\Models\WebsiteTemplate::class,
+            \App\Modules\Website\Policies\TemplatePolicy::class
         );
 
         // Register observers

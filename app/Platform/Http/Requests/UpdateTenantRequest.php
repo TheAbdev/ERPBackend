@@ -35,6 +35,7 @@ class UpdateTenantRequest extends FormRequest
             'settings.modules.erp' => ['sometimes', 'nullable', 'boolean'],
             'settings.modules.crm' => ['sometimes', 'nullable', 'boolean'],
             'settings.modules.hr' => ['sometimes', 'nullable', 'boolean'],
+            'settings.modules.website' => ['sometimes', 'nullable', 'boolean'],
         ];
     }
 

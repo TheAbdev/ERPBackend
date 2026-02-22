@@ -39,6 +39,7 @@ class StoreTenantRequest extends FormRequest
             'settings.modules.erp' => ['nullable', 'boolean'],
             'settings.modules.crm' => ['nullable', 'boolean'],
             'settings.modules.hr' => ['nullable', 'boolean'],
+            'settings.modules.website' => ['nullable', 'boolean'],
         ];
     }
 
