@@ -10,6 +10,7 @@ use App\Modules\Website\Models\WebsiteTemplate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SiteController extends Controller
 {
@@ -83,7 +84,7 @@ class SiteController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255'],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique('website_sites', 'slug')],
             'domain' => ['nullable', 'string', 'max:255'],
             'template_id' => ['nullable', 'integer', 'exists:website_templates,id'],
             'settings' => ['nullable', 'array'],
@@ -91,6 +92,14 @@ class SiteController extends Controller
         ]);
 
         $slug = $validated['slug'] ?? Str::slug($validated['name']);
+        if (! isset($validated['slug'])) {
+            $baseSlug = $slug;
+            $suffix = 0;
+            while (WebsiteSite::withoutGlobalScopes()->where('slug', $slug)->exists()) {
+                $suffix++;
+                $slug = $baseSlug . '-' . $suffix;
+            }
+        }
 
         $site = WebsiteSite::create([
             'tenant_id' => $tenantId,
@@ -128,7 +137,7 @@ class SiteController extends Controller
     {
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
-            'slug' => ['sometimes', 'string', 'max:255'],
+            'slug' => ['sometimes', 'string', 'max:255', Rule::unique('website_sites', 'slug')->ignore($site->id)],
             'domain' => ['nullable', 'string', 'max:255'],
             'template_id' => ['nullable', 'integer', 'exists:website_templates,id'],
             'settings' => ['nullable', 'array'],

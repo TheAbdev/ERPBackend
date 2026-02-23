@@ -27,8 +27,21 @@ class PublicWebsiteController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        // Theme: prefer template.config.theme (source of truth after save) then site.settings.theme
+        $siteData = $site->toArray();
+        $theme = $site->template?->config['theme'] ?? ($site->settings ?? [])['theme'] ?? null;
+        if ($theme) {
+            $siteData['settings'] = $siteData['settings'] ?? [];
+            $siteData['settings']['theme'] = $theme;
+            $siteData['theme'] = $theme; // top-level so renderers always find it
+        }
+        if (isset($site->template) && isset($site->template->config)) {
+            $siteData['template'] = $siteData['template'] ?? [];
+            $siteData['template']['config'] = $site->template->config;
+        }
+
         return response()->json([
-            'data' => $site,
+            'data' => $siteData,
             'pages' => $pages,
         ]);
     }
@@ -50,9 +63,22 @@ class PublicWebsiteController extends Controller
             ->where('status', 'published')
             ->firstOrFail();
 
+        // Theme: prefer template.config.theme then site.settings.theme; expose at top level
+        $siteData = $site->toArray();
+        $theme = $site->template?->config['theme'] ?? ($site->settings ?? [])['theme'] ?? null;
+        if ($theme) {
+            $siteData['settings'] = $siteData['settings'] ?? [];
+            $siteData['settings']['theme'] = $theme;
+            $siteData['theme'] = $theme;
+        }
+        if (isset($site->template) && isset($site->template->config)) {
+            $siteData['template'] = $siteData['template'] ?? [];
+            $siteData['template']['config'] = $site->template->config;
+        }
+
         return response()->json([
             'data' => $page,
-            'site' => $site,
+            'site' => $siteData,
         ]);
     }
 }
