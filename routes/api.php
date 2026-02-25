@@ -11,6 +11,9 @@ Route::prefix('auth')->group(function () {
 });
 
 
+// Serve storage files via API so CORS headers are applied (fixes OpaqueResponseBlocking for images)
+Route::get('/storage/serve', [\App\Modules\ECommerce\Http\Controllers\StorageServeController::class, '__invoke']);
+
 Route::prefix('storefront')->group(function () {
     Route::get('/{slug}', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getStore']);
     Route::get('/{slug}/products', [\App\Modules\ECommerce\Http\Controllers\StorefrontController::class, 'getProducts']);
@@ -675,18 +678,18 @@ Route::middleware(['auth:sanctum', 'tenant.resolve', 'tenant.access'])->group(fu
             Route::get('/templates', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'templates']);
             Route::get('/by-type', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'getByTypeAdmin']);
             Route::post('/', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'store']);
-            Route::get('/{page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'show']);
-            Route::put('/{page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'update']);
-            Route::delete('/{page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'destroy']);
+            Route::get('/{ecommerce_page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'show']);
+            Route::put('/{ecommerce_page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'update']);
+            Route::delete('/{ecommerce_page}', [\App\Modules\ECommerce\Http\Controllers\PageController::class, 'destroy']);
         });
 
         Route::prefix('page-builder')->group(function () {
             Route::get('/block-types', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'getBlockTypes']);
             Route::get('/reusable-blocks', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'getReusableBlocks']);
             Route::post('/reusable-blocks', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'createReusableBlock']);
-            Route::post('/pages/{page}/content', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'savePageContent']);
-            Route::post('/{page}/save', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'savePageContent']);
-            Route::post('/{page}/publish', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'publishPageContent']);
+            Route::post('/pages/{ecommerce_page}/content', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'savePageContent']);
+            Route::post('/{ecommerce_page}/save', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'savePageContent']);
+            Route::post('/{ecommerce_page}/publish', [\App\Modules\ECommerce\Http\Controllers\PageBuilderController::class, 'publishPageContent']);
         });
 
         Route::prefix('storefront-layouts')->group(function () {

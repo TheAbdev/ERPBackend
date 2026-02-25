@@ -38,6 +38,16 @@ class PageBuilderController extends Controller
                 ['type' => 'text', 'name' => 'Text', 'icon' => 'text', 'description' => 'Text block'],
                 ['type' => 'image', 'name' => 'Image', 'icon' => 'image', 'description' => 'Image block'],
                 ['type' => 'button', 'name' => 'Button', 'icon' => 'button', 'description' => 'Button block'],
+                ['type' => 'spacer', 'name' => 'Spacer', 'icon' => 'spacer', 'description' => 'Vertical spacing'],
+                ['type' => 'divider', 'name' => 'Divider', 'icon' => 'divider', 'description' => 'Horizontal divider line'],
+                ['type' => 'newsletter', 'name' => 'Newsletter', 'icon' => 'mail', 'description' => 'Newsletter signup'],
+                ['type' => 'cta', 'name' => 'Call to Action', 'icon' => 'cta', 'description' => 'Call to action section'],
+                ['type' => 'stats', 'name' => 'Stats / Counters', 'icon' => 'stats', 'description' => 'Numbers and stats'],
+                ['type' => 'faq', 'name' => 'FAQ', 'icon' => 'faq', 'description' => 'Frequently asked questions'],
+                ['type' => 'contact_form', 'name' => 'Contact Form', 'icon' => 'contact', 'description' => 'Contact form'],
+                ['type' => 'video', 'name' => 'Video', 'icon' => 'video', 'description' => 'Video embed'],
+                ['type' => 'social_links', 'name' => 'Social Links', 'icon' => 'share', 'description' => 'Social media links'],
+                ['type' => 'logo_cloud', 'name' => 'Logo Cloud', 'icon' => 'logos', 'description' => 'Partner or brand logos'],
             ],
         ]);
     }
@@ -87,49 +97,49 @@ class PageBuilderController extends Controller
         ], 201);
     }
 
-    public function savePageContent(Request $request, Page $page): JsonResponse
+    public function savePageContent(Request $request, Page $ecommerce_page): JsonResponse
     {
-        $this->authorize('update', $page);
+        $this->authorize('update', $ecommerce_page);
 
         $validated = $request->validate([
             'blocks' => ['required', 'array'],
         ]);
 
         if (Schema::hasColumn('ecommerce_pages', 'draft_content')) {
-            $page->draft_content = ['blocks' => $validated['blocks']];
+            $ecommerce_page->draft_content = ['blocks' => $validated['blocks']];
         } else {
-            $page->content = ['blocks' => $validated['blocks']];
+            $ecommerce_page->content = ['blocks' => $validated['blocks']];
         }
 
-        $page->is_published = false;
-        $page->save();
+        $ecommerce_page->is_published = false;
+        $ecommerce_page->save();
 
         return response()->json([
             'message' => 'Page saved successfully.',
-            'data' => $page,
+            'data' => $ecommerce_page,
         ]);
     }
 
-    public function publishPageContent(Request $request, Page $page): JsonResponse
+    public function publishPageContent(Request $request, Page $ecommerce_page): JsonResponse
     {
-        $this->authorize('update', $page);
+        $this->authorize('update', $ecommerce_page);
 
         $validated = $request->validate([
             'blocks' => ['required', 'array'],
         ]);
 
         if (Schema::hasColumn('ecommerce_pages', 'published_content')) {
-            $page->published_content = ['blocks' => $validated['blocks']];
+            $ecommerce_page->published_content = ['blocks' => $validated['blocks']];
         } else {
-            $page->content = ['blocks' => $validated['blocks']];
+            $ecommerce_page->content = ['blocks' => $validated['blocks']];
         }
 
-        $page->is_published = true;
-        $page->save();
+        $ecommerce_page->is_published = true;
+        $ecommerce_page->save();
 
         return response()->json([
             'message' => 'Page published successfully.',
-            'data' => $page,
+            'data' => $ecommerce_page,
         ]);
     }
 }

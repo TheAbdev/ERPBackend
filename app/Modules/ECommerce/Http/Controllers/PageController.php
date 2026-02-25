@@ -84,18 +84,18 @@ class PageController extends Controller
         ], 201);
     }
 
-    public function show(Page $page): JsonResponse
+    public function show(Page $ecommerce_page): JsonResponse
     {
-        $this->authorize('view', $page);
+        $this->authorize('view', $ecommerce_page);
 
         return response()->json([
-            'data' => $page,
+            'data' => $ecommerce_page,
         ]);
     }
 
-    public function update(Request $request, Page $page): JsonResponse
+    public function update(Request $request, Page $ecommerce_page): JsonResponse
     {
-        $this->authorize('update', $page);
+        $this->authorize('update', $ecommerce_page);
 
         $validated = $request->validate([
             'title' => ['sometimes', 'string', 'max:255'],
@@ -112,19 +112,19 @@ class PageController extends Controller
         ]);
 
         $data = $this->filterByExistingColumns($validated);
-        $page->update($data);
+        $ecommerce_page->update($data);
 
         return response()->json([
             'message' => 'Page updated successfully.',
-            'data' => $page,
+            'data' => $ecommerce_page,
         ]);
     }
 
-    public function destroy(Page $page): JsonResponse
+    public function destroy(Page $ecommerce_page): JsonResponse
     {
-        $this->authorize('delete', $page);
+        $this->authorize('delete', $ecommerce_page);
 
-        $page->delete();
+        $ecommerce_page->delete();
 
         return response()->json([
             'message' => 'Page deleted successfully.',

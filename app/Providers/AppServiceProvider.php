@@ -49,6 +49,10 @@ class AppServiceProvider extends ServiceProvider
                 ->firstOrFail();
         });
 
+        \Illuminate\Support\Facades\Route::bind('ecommerce_page', function ($value) {
+            return \App\Modules\ECommerce\Models\Page::findOrFail($value);
+        });
+
         \Illuminate\Support\Facades\Route::bind('template', function ($value) {
             return \App\Modules\Website\Models\WebsiteTemplate::where('id', $value)
                 ->orWhere('slug', $value)

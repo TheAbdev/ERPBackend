@@ -4,6 +4,8 @@ namespace App\Modules\ECommerce\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\ECommerce\Models\Store;
+use App\Modules\ECommerce\Models\Theme;
+use App\Modules\ECommerce\Services\ThemeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -127,7 +129,7 @@ class StoreController extends Controller
      * @param  \App\Modules\ECommerce\Models\Store  $store
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, Store $store): JsonResponse
+    public function update(Request $request, Store $store, ThemeService $themeService): JsonResponse
     {
         $this->authorize('update', $store);
 
@@ -143,7 +145,20 @@ class StoreController extends Controller
             'favicon' => ['nullable', 'string'],
         ]);
 
-        $store->update($validated);
+        if (array_key_exists('theme_id', $validated)) {
+            $newTheme = Theme::where('tenant_id', $request->user()->tenant_id)->find($validated['theme_id']);
+            if ($newTheme) {
+                $store = $themeService->applyTheme($store->fresh(), $newTheme);
+            } else {
+                $store->theme_id = $validated['theme_id'];
+                $store->save();
+            }
+            unset($validated['theme_id']);
+        }
+
+        if (!empty($validated)) {
+            $store->update($validated);
+        }
 
         return response()->json([
             'message' => 'Store updated successfully.',

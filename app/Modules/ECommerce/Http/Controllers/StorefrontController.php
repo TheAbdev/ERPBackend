@@ -22,8 +22,14 @@ class StorefrontController extends Controller
             return response()->json(['message' => 'Store not found.'], 404);
         }
 
+        $data = $store->toArray();
+        if (!empty($data['theme'])) {
+            // Expose template slug for storefront renderer (atlas-store, echo-store, etc.)
+            $data['theme']['slug'] = $data['theme']['source_template'] ?? $data['theme']['slug'];
+        }
+
         return response()->json([
-            'data' => $store,
+            'data' => $data,
         ]);
     }
 
@@ -80,7 +86,7 @@ class StorefrontController extends Controller
             $product = $sync->product;
             $image = $sync->ecommerce_images;
             $images = $image ? [$image] : [];
-            
+
             return [
                 'id' => $product?->id ?? $sync->product_id,
                 'name' => $product?->name ?? 'Product',
@@ -122,7 +128,7 @@ class StorefrontController extends Controller
 
         $image = $sync->ecommerce_images;
         $images = $image ? [$image] : [];
-        
+
         return response()->json([
             'data' => [
                 'id' => $sync->product->id,
@@ -160,7 +166,8 @@ class StorefrontController extends Controller
             return response()->json(['message' => 'Store not found.'], 404);
         }
 
-        // Get custom pages (from Pages table, not theme pages)
+        // Get all pages that should appear in nav: standard (home, products, cart, etc.) + custom.
+        // Do NOT filter by page_type = 'custom' so Home, Products, Cart and custom pages all appear.
         $query = Page::where('store_id', $store->id)
             ->where('is_published', true);
 
@@ -168,11 +175,30 @@ class StorefrontController extends Controller
             $query->where('nav_visible', true);
         }
 
-        if (Schema::hasColumn('ecommerce_pages', 'page_type')) {
-            $query->where('page_type', 'custom');
-        }
+        $dbPages = $query->orderBy('nav_order')->get(['id', 'title', 'slug', 'nav_order', 'page_type']);
 
-        $pages = $query->orderBy('nav_order')->get(['id', 'title', 'slug', 'nav_order']);
+        // Ensure standard nav entries exist: if no page with slug home/products/cart/account, prepend defaults.
+        $defaultNav = [
+            ['id' => null, 'title' => 'Home', 'slug' => 'home', 'nav_order' => 0, 'page_type' => 'home'],
+            ['id' => null, 'title' => 'Products', 'slug' => 'products', 'nav_order' => 1, 'page_type' => 'products'],
+            ['id' => null, 'title' => 'Cart', 'slug' => 'cart', 'nav_order' => 2, 'page_type' => 'cart'],
+            ['id' => null, 'title' => 'Account', 'slug' => 'account', 'nav_order' => 3, 'page_type' => 'account'],
+        ];
+        $bySlug = $dbPages->keyBy('slug');
+        $merged = collect();
+        foreach ($defaultNav as $def) {
+            if ($bySlug->has($def['slug'])) {
+                $merged->push($bySlug->get($def['slug']));
+            } else {
+                $merged->push((object) $def);
+            }
+        }
+        foreach ($dbPages as $p) {
+            if (!in_array($p->slug, ['home', 'products', 'cart', 'account'], true)) {
+                $merged->push($p);
+            }
+        }
+        $pages = $merged->sortBy('nav_order')->values()->all();
 
         return response()->json([
             'data' => $pages,
@@ -262,6 +288,7 @@ class StorefrontController extends Controller
             'data' => [
                 'id' => $store->theme->id,
                 'name' => $store->theme->name,
+                'slug' => $store->theme->source_template ?? $store->theme->slug,
                 'config' => $store->theme->config,
             ],
         ]);

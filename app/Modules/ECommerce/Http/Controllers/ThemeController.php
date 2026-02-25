@@ -647,10 +647,10 @@ class ThemeController extends Controller
     {
         return [
             [
-                'template_slug' => 'modern-minimal',
-                'name' => 'Modern Minimal',
-                'description' => 'Clean layout with calm tones and generous spacing.',
-                'preview_image' => '/templates/modern-minimal.png',
+                'template_slug' => 'atlas-store',
+                'name' => 'Atlas',
+                'description' => 'Professional layout with top accent bar and clear sections.',
+                'preview_image' => '/templates/atlas-store.png',
                 'config' => [
                     'colors' => [
                         'primary' => '#2563EB',
@@ -659,255 +659,152 @@ class ThemeController extends Controller
                         'text' => '#1F2937',
                         'accent' => '#3B82F6',
                     ],
-                    'typography' => [
-                        'fontFamily' => 'Inter, Arial, sans-serif',
-                        'headingSize' => '2.5rem',
-                        'bodySize' => '1rem',
-                    ],
-                    'layout' => [
-                        'radius' => '12px',
-                        'spacing' => '24px',
-                        'maxWidth' => '1280px',
-                    ],
-                    'translations' => [
-                        'en' => [
-                            'home' => 'Home',
-                            'products' => 'Products',
-                            'cart' => 'Cart',
-                            'my_orders' => 'My Orders',
-                        ],
-                        'ar' => [
-                            'home' => 'الرئيسية',
-                            'products' => 'المنتجات',
-                            'cart' => 'السلة',
-                            'my_orders' => 'طلباتي',
-                        ],
-                    ],
+                    'typography' => ['fontFamily' => 'Merriweather, serif'],
+                    'layout' => ['radius' => '12px', 'spacing' => '24px', 'maxWidth' => '1280px'],
                 ],
             ],
             [
-                'template_slug' => 'bold-commerce',
-                'name' => 'Bold Commerce',
-                'description' => 'High-contrast palette for energetic storefronts.',
-                'preview_image' => '/templates/bold-commerce.png',
+                'template_slug' => 'echo-store',
+                'name' => 'Echo',
+                'description' => 'Education-style two-row header, gradient hero, rounded cards.',
+                'preview_image' => '/templates/echo-store.png',
+                'config' => [
+                    'colors' => [
+                        'primary' => '#1D4ED8',
+                        'secondary' => '#F97316',
+                        'background' => '#EFF6FF',
+                        'text' => '#1E3A8A',
+                    ],
+                    'typography' => ['fontFamily' => 'DM Serif Display, serif'],
+                    'layout' => ['radius' => '16px', 'spacing' => '24px', 'maxWidth' => '1280px'],
+                ],
+            ],
+            [
+                'template_slug' => 'bloom-store',
+                'name' => 'Bloom',
+                'description' => 'Wellness soft design with pill nav and rounded cards.',
+                'preview_image' => '/templates/bloom-store.png',
+                'config' => [
+                    'colors' => [
+                        'primary' => '#047857',
+                        'secondary' => '#FDE68A',
+                        'background' => '#F0FDF4',
+                        'text' => '#064E3B',
+                    ],
+                    'typography' => ['fontFamily' => 'Lora, serif'],
+                    'layout' => ['radius' => '24px', 'spacing' => '28px', 'maxWidth' => '1200px'],
+                ],
+            ],
+            [
+                'template_slug' => 'northwind-store',
+                'name' => 'Northwind',
+                'description' => 'Brand showcase with centered header and big italic typography.',
+                'preview_image' => '/templates/northwind-store.png',
+                'config' => [
+                    'colors' => [
+                        'primary' => '#4C0519',
+                        'secondary' => '#FDA4AF',
+                        'background' => '#FFF1F2',
+                        'text' => '#4C0519',
+                    ],
+                    'typography' => ['fontFamily' => 'Playfair Display, serif'],
+                    'layout' => ['radius' => '8px', 'spacing' => '24px', 'maxWidth' => '1280px'],
+                ],
+            ],
+            [
+                'template_slug' => 'forge-store',
+                'name' => 'Forge',
+                'description' => 'Industrial bold layout with dark header and strong borders.',
+                'preview_image' => '/templates/forge-store.png',
                 'config' => [
                     'colors' => [
                         'primary' => '#DC2626',
                         'secondary' => '#111827',
                         'background' => '#F8FAFC',
                         'text' => '#111827',
-                        'accent' => '#EF4444',
                     ],
-                    'typography' => [
-                        'fontFamily' => 'Poppins, Arial, sans-serif',
-                        'headingSize' => '2.75rem',
-                        'bodySize' => '1rem',
-                    ],
-                    'layout' => [
-                        'radius' => '8px',
-                        'spacing' => '20px',
-                        'maxWidth' => '1400px',
-                    ],
+                    'typography' => ['fontFamily' => 'Poppins, sans-serif'],
+                    'layout' => ['radius' => '4px', 'spacing' => '20px', 'maxWidth' => '1400px'],
                 ],
             ],
             [
-                'template_slug' => 'soft-pastel',
-                'name' => 'Soft Pastel',
-                'description' => 'Gentle pastels for lifestyle brands.',
-                'preview_image' => '/templates/soft-pastel.png',
-                'config' => [
-                    'colors' => [
-                        'primary' => '#A855F7',
-                        'secondary' => '#F59E0B',
-                        'background' => '#FFF7ED',
-                        'text' => '#374151',
-                        'accent' => '#C084FC',
-                    ],
-                    'typography' => [
-                        'fontFamily' => 'Nunito, Arial, sans-serif',
-                        'headingSize' => '2.4rem',
-                        'bodySize' => '1rem',
-                    ],
-                    'layout' => [
-                        'radius' => '16px',
-                        'spacing' => '28px',
-                        'maxWidth' => '1200px',
-                    ],
-                ],
-            ],
-            [
-                'template_slug' => 'dark-lux',
-                'name' => 'Dark Lux',
-                'description' => 'Premium dark theme with gold accents.',
-                'preview_image' => '/templates/dark-lux.png',
-                'config' => [
-                    'colors' => [
-                        'primary' => '#F59E0B',
-                        'secondary' => '#9CA3AF',
-                        'background' => '#111827',
-                        'text' => '#F9FAFB',
-                        'accent' => '#FBBF24',
-                    ],
-                    'typography' => [
-                        'fontFamily' => 'Playfair Display, serif',
-                        'headingSize' => '2.8rem',
-                        'bodySize' => '1.1rem',
-                    ],
-                    'layout' => [
-                        'radius' => '4px',
-                        'spacing' => '32px',
-                        'maxWidth' => '1320px',
-                    ],
-                ],
-            ],
-            [
-                'template_slug' => 'fresh-market',
-                'name' => 'Fresh Market',
-                'description' => 'Bright, natural palette for grocery brands.',
-                'preview_image' => '/templates/fresh-market.png',
-                'config' => [
-                    'colors' => [
-                        'primary' => '#16A34A',
-                        'secondary' => '#4B5563',
-                        'background' => '#F0FDF4',
-                        'text' => '#1F2937',
-                        'accent' => '#22C55E',
-                    ],
-                    'typography' => [
-                        'fontFamily' => 'Source Sans Pro, Arial, sans-serif',
-                        'headingSize' => '2.4rem',
-                        'bodySize' => '1rem',
-                    ],
-                    'layout' => [
-                        'radius' => '10px',
-                        'spacing' => '22px',
-                        'maxWidth' => '1280px',
-                    ],
-                ],
-            ],
-            [
-                'template_slug' => 'tech-store',
-                'name' => 'Tech Store',
-                'description' => 'Cool tones for electronics and gadgets.',
-                'preview_image' => '/templates/tech-store.png',
-                'config' => [
-                    'colors' => [
-                        'primary' => '#0EA5E9',
-                        'secondary' => '#334155',
-                        'background' => '#F8FAFC',
-                        'text' => '#0F172A',
-                        'accent' => '#38BDF8',
-                    ],
-                    'typography' => [
-                        'fontFamily' => 'Roboto, Arial, sans-serif',
-                        'headingSize' => '2.6rem',
-                        'bodySize' => '0.95rem',
-                    ],
-                    'layout' => [
-                        'radius' => '6px',
-                        'spacing' => '18px',
-                        'maxWidth' => '1440px',
-                    ],
-                ],
-            ],
-            [
-                'template_slug' => 'artisan-craft',
-                'name' => 'Artisan Craft',
-                'description' => 'Warm handcrafted feel for boutique brands.',
-                'preview_image' => '/templates/artisan-craft.png',
-                'config' => [
-                    'colors' => [
-                        'primary' => '#B45309',
-                        'secondary' => '#6B7280',
-                        'background' => '#FFFBEB',
-                        'text' => '#3F2D20',
-                        'accent' => '#D97706',
-                    ],
-                    'typography' => [
-                        'fontFamily' => 'Merriweather, serif',
-                        'headingSize' => '2.5rem',
-                        'bodySize' => '1.05rem',
-                    ],
-                    'layout' => [
-                        'radius' => '2px',
-                        'spacing' => '26px',
-                        'maxWidth' => '1180px',
-                    ],
-                ],
-            ],
-            [
-                'template_slug' => 'clean-white',
-                'name' => 'Clean White',
-                'description' => 'Minimal white-first storefront.',
-                'preview_image' => '/templates/clean-white.png',
-                'config' => [
-                    'colors' => [
-                        'primary' => '#1D4ED8',
-                        'secondary' => '#94A3B8',
-                        'background' => '#FFFFFF',
-                        'text' => '#0F172A',
-                        'accent' => '#2563EB',
-                    ],
-                    'typography' => [
-                        'fontFamily' => 'Helvetica, Arial, sans-serif',
-                        'headingSize' => '2.3rem',
-                        'bodySize' => '1rem',
-                    ],
-                    'layout' => [
-                        'radius' => '0px',
-                        'spacing' => '24px',
-                        'maxWidth' => '1200px',
-                    ],
-                ],
-            ],
-            [
-                'template_slug' => 'vibrant-pop',
-                'name' => 'Vibrant Pop',
-                'description' => 'Colorful UI for youth-focused brands.',
-                'preview_image' => '/templates/vibrant-pop.png',
-                'config' => [
-                    'colors' => [
-                        'primary' => '#EC4899',
-                        'secondary' => '#6366F1',
-                        'background' => '#FDF2F8',
-                        'text' => '#312E81',
-                        'accent' => '#F472B6',
-                    ],
-                    'typography' => [
-                        'fontFamily' => 'Rubik, Arial, sans-serif',
-                        'headingSize' => '2.6rem',
-                        'bodySize' => '1rem',
-                    ],
-                    'layout' => [
-                        'radius' => '20px',
-                        'spacing' => '20px',
-                        'maxWidth' => '1300px',
-                    ],
-                ],
-            ],
-            [
-                'template_slug' => 'classic-retail',
-                'name' => 'Classic Retail',
-                'description' => 'Balanced layout for everyday retail.',
-                'preview_image' => '/templates/classic-retail.png',
+                'template_slug' => 'horizon-store',
+                'name' => 'Horizon',
+                'description' => 'Real estate style with vertical accent bar and clean sections.',
+                'preview_image' => '/templates/horizon-store.png',
                 'config' => [
                     'colors' => [
                         'primary' => '#0F766E',
                         'secondary' => '#64748B',
                         'background' => '#F8FAFC',
                         'text' => '#0F172A',
-                        'accent' => '#14B8A6',
                     ],
-                    'typography' => [
-                        'fontFamily' => 'Lato, Arial, sans-serif',
-                        'headingSize' => '2.4rem',
-                        'bodySize' => '1rem',
+                    'typography' => ['fontFamily' => 'Inter, sans-serif'],
+                    'layout' => ['radius' => '8px', 'spacing' => '22px', 'maxWidth' => '1280px'],
+                ],
+            ],
+            [
+                'template_slug' => 'copper-store',
+                'name' => 'Copper',
+                'description' => 'Agency tab-style layout with pill nav and card top bars.',
+                'preview_image' => '/templates/copper-store.png',
+                'config' => [
+                    'colors' => [
+                        'primary' => '#B45309',
+                        'secondary' => '#6B7280',
+                        'background' => '#FFFBEB',
+                        'text' => '#3F2D20',
                     ],
-                    'layout' => [
-                        'radius' => '8px',
-                        'spacing' => '24px',
-                        'maxWidth' => '1280px',
+                    'typography' => ['fontFamily' => 'Inter, sans-serif'],
+                    'layout' => ['radius' => '12px', 'spacing' => '24px', 'maxWidth' => '1280px'],
+                ],
+            ],
+            [
+                'template_slug' => 'drift-store',
+                'name' => 'Drift',
+                'description' => 'Minimal compact layout with subtle borders and clean spacing.',
+                'preview_image' => '/templates/drift-store.png',
+                'config' => [
+                    'colors' => [
+                        'primary' => '#475569',
+                        'secondary' => '#94A3B8',
+                        'background' => '#FFFFFF',
+                        'text' => '#0F172A',
                     ],
+                    'typography' => ['fontFamily' => 'Inter, sans-serif'],
+                    'layout' => ['radius' => '6px', 'spacing' => '16px', 'maxWidth' => '1200px'],
+                ],
+            ],
+            [
+                'template_slug' => 'lumen-store',
+                'name' => 'Lumen',
+                'description' => 'Tech lab style with dot accents and modern feel.',
+                'preview_image' => '/templates/lumen-store.png',
+                'config' => [
+                    'colors' => [
+                        'primary' => '#0EA5E9',
+                        'secondary' => '#334155',
+                        'background' => '#0F172A',
+                        'text' => '#F8FAFC',
+                    ],
+                    'typography' => ['fontFamily' => 'JetBrains Mono, monospace'],
+                    'layout' => ['radius' => '8px', 'spacing' => '20px', 'maxWidth' => '1280px'],
+                ],
+            ],
+            [
+                'template_slug' => 'aurora-store',
+                'name' => 'Aurora',
+                'description' => 'Creative gradient layout for bold storefronts.',
+                'preview_image' => '/templates/aurora-store.png',
+                'config' => [
+                    'colors' => [
+                        'primary' => '#7C3AED',
+                        'secondary' => '#EC4899',
+                        'background' => '#FAF5FF',
+                        'text' => '#1E1B4B',
+                    ],
+                    'typography' => ['fontFamily' => 'Inter, sans-serif'],
+                    'layout' => ['radius' => '16px', 'spacing' => '24px', 'maxWidth' => '1280px'],
                 ],
             ],
         ];
